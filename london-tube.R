@@ -161,16 +161,18 @@ server <- function(input, output, session) {
   # --- Combined Reactive for Selected Station Info ---
   selected_station_info <- reactive({
     req(input$selected_station_naptan)
-    validate(need(exists("master_tube_locations") && is.data.frame(master_tube_locations) && nrow(master_tube_locations) > 0,
-                  "Station location data failed to load."))
+    if (!exists("master_tube_locations") || !is.data.frame(master_tube_locations) || nrow(master_tube_locations) == 0) {
+      return(data.frame())
+    }
     master_tube_locations %>% filter(NaptanCode == input$selected_station_naptan)
   })
   
   # --- TfL Crowding Logic ---
   tfl_crowding_data <- reactive({
     req(input$selected_station_naptan, input$tfl_days)
-    validate(need(length(station_choices) > 0 && !(names(station_choices)[1] %in% c("Loading Error")),
-                  "Station list failed to load. Cannot fetch crowding data."))
+    if (length(station_choices) == 0 || names(station_choices)[1] %in% c("Loading Error")) {
+      return(data.frame())
+    }
     naptan_code <- input$selected_station_naptan
     
     all_days_data <- map_dfr(input$tfl_days, function(day) {
@@ -217,19 +219,38 @@ server <- function(input, output, session) {
   # Render the crowding plot
   output$tflCrowdingPlot <- renderPlotly({
     plot_data <- tfl_crowding_data()
-    validate(
-      need(is.data.frame(plot_data) && nrow(plot_data) > 0,
-           "No crowding data available to plot for the selected station(s) and day(s). Check API status or selection.")
-    )
+    if (!is.data.frame(plot_data) || nrow(plot_data) == 0) {
+      # Create an empty plot with error message
+      empty_plot <- ggplot() + 
+        annotate("text", x = 0.5, y = 0.5, 
+                label = "No crowding data available to plot for the selected station(s) and day(s).\nCheck API status or selection.", 
+                size = 4, hjust = 0.5, vjust = 0.5) +
+        theme_void()
+      return(ggplotly(empty_plot))
+    }
     
     station_name <- names(station_choices[station_choices == input$selected_station_naptan])
     station_name <- if (length(station_name) == 0 || is.na(station_name)) input$selected_station_naptan else station_name[1]
     
     time_col <- "timeBand"; value_col <- "percentageOfBaseLine"
-    validate(
-      need(time_col %in% names(plot_data), paste("Plotting Error: Column '", time_col, "' not found.")),
-      need(value_col %in% names(plot_data), paste("Plotting Error: Column '", value_col, "' not found."))
-    )
+    if (!time_col %in% names(plot_data)) {
+      # Create an empty plot with error message
+      empty_plot <- ggplot() + 
+        annotate("text", x = 0.5, y = 0.5, 
+                label = paste("Plotting Error: Column '", time_col, "' not found."), 
+                size = 4, hjust = 0.5, vjust = 0.5) +
+        theme_void()
+      return(ggplotly(empty_plot))
+    }
+    if (!value_col %in% names(plot_data)) {
+      # Create an empty plot with error message
+      empty_plot <- ggplot() + 
+        annotate("text", x = 0.5, y = 0.5, 
+                label = paste("Plotting Error: Column '", value_col, "' not found."), 
+                size = 4, hjust = 0.5, vjust = 0.5) +
+        theme_void()
+      return(ggplotly(empty_plot))
+    }
     
     # --- Create ggplot ---
     p <- ggplot(data = plot_data,
@@ -287,11 +308,12 @@ server <- function(input, output, session) {
   # Dynamic title for the weather box
   output$weatherTitle <- renderText({
     info <- selected_station_info()
-    validate(
-      need(info, "Waiting for station selection..."),
-      need(nrow(info) > 0, "Station details not found."),
-      need(!is.na(info$StationName[1]) && info$StationName[1] != "", "Station name missing.")
-    )
+    if (is.null(info) || nrow(info) == 0) {
+      return("Waiting for station selection...")
+    }
+    if (is.na(info$StationName[1]) || info$StationName[1] == "") {
+      return("Station name missing.")
+    }
     paste("Current Weather near", info$StationName[1])
   })
   
@@ -302,12 +324,12 @@ server <- function(input, output, session) {
   weather_api_data <- reactive({
     autoInvalidate()
     info <- selected_station_info()
-    validate(
-      need(info, "Waiting for station selection..."),
-      need(nrow(info) > 0, "Station details not found."),
-      need(!is.na(info$Latitude) && !is.na(info$Longitude),
-           "Selected station has invalid coordinates.")
-    )
+    if (is.null(info) || nrow(info) == 0) {
+      return(NULL)
+    }
+    if (is.na(info$Latitude) || is.na(info$Longitude)) {
+      return(NULL)
+    }
     
     base_url <- "https://weather.googleapis.com/v1/currentConditions:lookup"
     api_key_google <- google_maps_api
@@ -336,13 +358,15 @@ server <- function(input, output, session) {
   # Render the simple weather statement
   output$weatherStatement <- renderText({
     data_list <- weather_api_data()
-    validate(
-      need(!is.null(data_list) && is.list(data_list), "Waiting for weather data or API call failed...")
-    )
+    if (is.null(data_list) || !is.list(data_list)) {
+      return("Waiting for weather data or API call failed...")
+    }
     
     # Convert list to local data frame for easier access & checking names
     df <- tryCatch(as.data.frame(data_list), error = function(e) NULL)
-    validate(need(!is.null(df), "Error processing weather data structure."))
+    if (is.null(df)) {
+      return("Error processing weather data structure.")
+    }
     
     # Extract using direct data frame access, providing default NA
     station_name <- df[["SelectedStationName"]][1] %||% "Selected Location"
