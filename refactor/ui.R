@@ -14,6 +14,16 @@ ui <- fluidPage(
              checkboxGroupInput("tfl_days", "Select Day(s) for Crowding:",
                                 choices = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
                                 selected = "Mon", inline = TRUE)
+           ),
+           wellPanel(
+             h4("Journey Planner"),
+             selectInput("origin_station", "Origin Station:",
+                         choices = station_choices,
+                         selected = default_naptan_code),
+             selectInput("destination_station", "Destination Station:",
+                         choices = station_choices,
+                         selected = default_naptan_code),
+             actionButton("plan_journey", "Plan Journey", class = "btn-primary")
            )
     ),
     column(width = 8,
@@ -31,6 +41,14 @@ ui <- fluidPage(
                     ),
                     tags$div(class = "panel-body",
                              verbatimTextOutput("weatherStatement")
+                    )
+           ),
+           tags$div(class = "panel panel-success", style = "margin-top: 20px;",
+                    tags$div(class = "panel-heading",
+                             tags$h3(class = "panel-title", "Journey Route")
+                    ),
+                    tags$div(class = "panel-body",
+                             verbatimTextOutput("journeyRouteOutput")
                     )
            )
     )

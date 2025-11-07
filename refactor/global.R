@@ -8,7 +8,24 @@ library(dplyr)
 library(lubridate)
 library(DT)
 
-google_maps_api <- "AIzaSyAyNRSTGTUmjKXa7CqdmxczCNl4U3HOEYI"
+# Load API keys from config file or environment variables
+# Priority: config.R (if exists) > environment variables > fallback
+if (file.exists("config.R")) {
+  source("config.R", local = TRUE)
+  message("Loaded API keys from config.R")
+} else {
+  # Try to load from environment variables
+  google_maps_api <- Sys.getenv("GOOGLE_MAPS_API_KEY", unset = NA)
+  
+  if (is.na(google_maps_api) || google_maps_api == "") {
+    # Fallback: use hardcoded key (not recommended for production)
+    # TODO: Remove this fallback and require proper configuration
+    warning("API key not found in environment or config.R. Using fallback key.")
+    google_maps_api <- "AIzaSyAyNRSTGTUmjKXa7CqdmxczCNl4U3HOEYI"
+  } else {
+    message("Loaded API keys from environment variables")
+  }
+}
 
 fetch_and_process_tfl_stoppoints <- function() {
   urls <- c(
@@ -79,5 +96,6 @@ if (length(station_choices) > 1 && !(names(station_choices)[1] %in% c("Loading E
 
 source("R/tfl_helpers.R")
 source("R/weather_helpers.R")
+source("R/journey_routing.R")
 
 

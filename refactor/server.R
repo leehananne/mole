@@ -142,6 +142,76 @@ server <- function(input, output, session) {
     if (!is.character(statement)) { statement <- "Error formatting weather statement." }
     return(statement)
   })
+
+  journey_route_data <- eventReactive(input$plan_journey, {
+    req(input$origin_station, input$destination_station)
+    if (input$origin_station == input$destination_station) {
+      showNotification("Origin and destination stations must be different", type = "warning", duration = 3)
+      return(NULL)
+    }
+    result <- fetch_journey_route(input$origin_station, input$destination_station)
+    if (is.null(result)) {
+      origin_name <- names(station_choices[station_choices == input$origin_station])[1] %||% input$origin_station
+      dest_name <- names(station_choices[station_choices == input$destination_station])[1] %||% input$destination_station
+      showNotification(
+        paste("Failed to fetch journey route from", origin_name, "to", dest_name, ". Please check the station codes or try again."),
+        type = "error",
+        duration = 8
+      )
+    }
+    return(result)
+  })
+
+  output$journeyRouteOutput <- renderText({
+    route_data <- journey_route_data()
+    if (is.null(route_data)) {
+      return("Select origin and destination stations, then click 'Plan Journey' to find a route.")
+    }
+    
+    # Extract journey information from the API response
+    origin_name <- names(station_choices[station_choices == input$origin_station])[1] %||% input$origin_station
+    dest_name <- names(station_choices[station_choices == input$destination_station])[1] %||% input$destination_station
+    
+    lines <- list()
+    lines$header <- paste("Journey from ", origin_name, " to ", dest_name, ":")
+    lines$separator <- "=========================================="
+    
+    # Check if journeys exist in the response
+    if (!is.null(route_data$journeys) && length(route_data$journeys) > 0) {
+      journey <- route_data$journeys[[1]]  # Get first journey
+      
+      # Duration
+      if (!is.null(journey$duration)) {
+        duration_mins <- round(journey$duration / 60, 1)
+        lines$duration <- paste("Duration: ", duration_mins, " minutes")
+      }
+      
+      # Legs information
+      if (!is.null(journey$legs) && length(journey$legs) > 0) {
+        lines$legs_header <- "\nRoute:"
+        leg_details <- c()
+        for (i in seq_along(journey$legs)) {
+          leg <- journey$legs[[i]]
+          if (!is.null(leg$instruction$summary)) {
+            leg_details <- c(leg_details, paste("  ", i, ". ", leg$instruction$summary))
+          } else if (!is.null(leg$mode$name)) {
+            leg_details <- c(leg_details, paste("  ", i, ". ", leg$mode$name))
+          }
+        }
+        if (length(leg_details) > 0) {
+          lines$legs <- paste(leg_details, collapse = "\n")
+        }
+      }
+    } else {
+      lines$no_route <- "No route found between these stations."
+    }
+    
+    result <- paste(lines, collapse = "\n")
+    if (!is.character(result) || result == "") {
+      return("Route data received but could not be formatted. Check API response structure.")
+    }
+    return(result)
+  })
 }
 
 
