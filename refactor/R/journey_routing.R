@@ -1,16 +1,98 @@
-fetch_journey_api <- function(origin_naptan, destination_naptan, access_pref, journey_pref) {
+# Helper function to separate leg chunks from a flattened list
+# Each chunk starts with "departureTime" and ends with "obstacles"
+separate_leg_chunks <- function(legs_list) {
+  if (!is.list(legs_list) || length(legs_list) == 0) {
+    return(list())
+  }
+  
+  # Check if this is already a list of leg objects (properly structured)
+  if (is.list(legs_list[[1]]) && length(legs_list[[1]]) > 0 && 
+      !is.null(names(legs_list[[1]])) && 
+      ("departureTime" %in% names(legs_list[[1]]) || "$type" %in% names(legs_list[[1]]))) {
+    # Already separated into leg objects - return as is
+    return(legs_list)
+  }
+  
+  # It's a flat list - need to group by chunks
+  leg_chunks <- list()
+  current_chunk <- list()
+  in_chunk <- FALSE
+  
+  for (i in seq_along(legs_list)) {
+    item <- legs_list[[i]]
+    
+    # Check if this item indicates start of a chunk
+    if (is.list(item) && !is.null(names(item)) && "departureTime" %in% names(item)) {
+      # If we were already in a chunk, save it first
+      if (in_chunk && length(current_chunk) > 0) {
+        leg_chunks[[length(leg_chunks) + 1]] <- current_chunk
+      }
+      # Start new chunk
+      current_chunk <- list(item)
+      in_chunk <- TRUE
+    } else if (in_chunk) {
+      # We're in a chunk - add this item
+      current_chunk[[length(current_chunk) + 1]] <- item
+      
+      # Check if this item indicates end of chunk
+      if (is.list(item) && !is.null(names(item)) && "obstacles" %in% names(item)) {
+        # End of chunk - save it
+        leg_chunks[[length(leg_chunks) + 1]] <- current_chunk
+        current_chunk <- list()
+        in_chunk <- FALSE
+      }
+    }
+  }
+  
+  # Add any remaining chunk
+  if (in_chunk && length(current_chunk) > 0) {
+    leg_chunks[[length(leg_chunks) + 1]] <- current_chunk
+  }
+  
+  # Merge each chunk into a single leg object
+  leg_objects <- list()
+  for (chunk in leg_chunks) {
+    leg_obj <- list()
+    for (item in chunk) {
+      if (is.list(item) && !is.null(names(item))) {
+        # Merge this item's key-value pairs into leg_obj
+        for (key in names(item)) {
+          leg_obj[[key]] <- item[[key]]
+        }
+      }
+    }
+    if (length(leg_obj) > 0) {
+      leg_objects[[length(leg_objects) + 1]] <- leg_obj
+    }
+  }
+  
+  return(leg_objects)
+}
+
+
+fetch_journey_api <- function(origin_naptan, destination_naptan, 
+                               access_pref = "NoRequirements", 
+                               journey_pref = "LeastTime") {
   # Input validation
   if (is.null(origin_naptan) || origin_naptan == "" || 
       is.null(destination_naptan) || destination_naptan == "") {
     stop("Missing origin or destination naptan codes")
   }
   
+  # Validate and set defaults for preferences
+  if (is.null(access_pref) || access_pref == "") {
+    access_pref <- "NoRequirements"
+  }
+  if (is.null(journey_pref) || journey_pref == "") {
+    journey_pref <- "LeastTime"
+  }
+  
   # Build API Call URL
   base_url <- paste0("https://api.tfl.gov.uk/Journey/JourneyResults/", 
                      origin_naptan, "/to/", destination_naptan)
   
+  # Query parameters matching TfL website format
   query_params <- list(
-    mode = "tube",
     nationalSearch = "false",
     accessibilityPreference = access_pref,
     journeyPreference = journey_pref
@@ -43,18 +125,18 @@ fetch_journey_api <- function(origin_naptan, destination_naptan, access_pref, jo
   return(parsed_data)
 }
 
-# Function to explore the structure of parsed_data$journeys and its legs
+# # Function to explore the structure of parsed_data$journeys and its legs
 # explore_journeys_structure <- function(parsed_data) {
 #   message("\n=== EXPLORING JOURNEYS STRUCTURE ===\n")
-#   
+# 
 #   # Step 1: Check if journeys exists
 #   if (is.null(parsed_data$journeys)) {
 #     message("ERROR: parsed_data$journeys is NULL")
 #     return(invisible(NULL))
 #   }
-#   
-#   journeys <- parsed_data$journeys
-#   
+# 
+#       journeys <- parsed_data$journeys
+# 
 #   # Step 2: Check type and length
 #   message("Step 1: Checking journeys object type and length")
 #   journeys_class <- class(journeys)
@@ -62,33 +144,33 @@ fetch_journey_api <- function(origin_naptan, destination_naptan, access_pref, jo
 #   message("  class(parsed_data$journeys): ", paste(journeys_class, collapse = ", "))
 #   message("  length(parsed_data$journeys): ", journeys_length)
 #   message("")
-#   
+# 
 #   # Step 3: Handle different structures
-#   if (is.data.frame(journeys)) {
+#       if (is.data.frame(journeys)) {
 #     message("Journeys is a data frame with ", nrow(journeys), " rows")
 #     message("Columns: ", paste(names(journeys), collapse = ", "))
 #     message("")
-#     
+# 
 #     # Check if legs column exists
 #     if ("legs" %in% names(journeys)) {
 #       message("Found 'legs' column in journeys data frame")
 #       message("")
-#       
+# 
 #       # Iterate through each journey
-#       for (i in seq_len(nrow(journeys))) {
+#           for (i in seq_len(nrow(journeys))) {
 #         message("--- JOURNEY ", i, " ---")
 #         legs <- journeys$legs[[i]]
-#         
+# 
 #         if (is.null(legs)) {
 #           message("  Legs is NULL")
 #           message("")
 #           next
 #         }
-#         
+# 
 #         message("  Legs type: ", paste(class(legs), collapse = ", "))
 #         message("  Legs length: ", length(legs))
 #         message("")
-#         
+# 
 #         # Convert to list if it's a data frame
 #         if (is.data.frame(legs)) {
 #           message("  Converting legs data frame to list...")
@@ -101,12 +183,12 @@ fetch_journey_api <- function(origin_naptan, destination_naptan, access_pref, jo
 #           })
 #           legs <- legs_list
 #         }
-#         
+# 
 #         # Now iterate through legs
 #         if (is.list(legs) && length(legs) > 0) {
 #           # Separate into leg chunks if needed
 #           legs_separated <- separate_leg_chunks(legs)
-#           
+# 
 #           for (j in seq_along(legs_separated)) {
 #             leg <- legs_separated[[j]]
 #             message("--- NEW LEG ", j, " (Journey ", i, ") ---")
@@ -122,59 +204,59 @@ fetch_journey_api <- function(origin_naptan, destination_naptan, access_pref, jo
 #       message("No 'legs' column found in journeys data frame")
 #       message("Available columns: ", paste(names(journeys), collapse = ", "))
 #     }
-#     
+# 
 #   } else if (is.list(journeys)) {
 #     message("Journeys is a list")
 #     message("")
-#     
+# 
 #     # Check if first element has a 'legs' field (meaning journeys is a list of journey objects)
 #     if (length(journeys) > 0 && is.list(journeys[[1]]) && "legs" %in% names(journeys[[1]])) {
 #       message("Journeys appears to be a list of journey objects (each with a 'legs' field)")
 #       message("")
-#       
+# 
 #       # Iterate through each journey
 #       for (i in seq_along(journeys)) {
 #         journey <- journeys[[i]]
 #         message("--- JOURNEY ", i, " ---")
-#         
+# 
 #         if (is.null(journey$legs)) {
 #           message("  Legs is NULL")
 #           message("")
 #           next
 #         }
-#         
+# 
 #         legs <- journey$legs
 #         message("  Legs type: ", paste(class(legs), collapse = ", "))
 #         message("  Legs length: ", length(legs))
 #         message("")
-#         
+# 
 #         # Separate into leg chunks if needed
-#         legs_separated <- separate_leg_chunks(legs)
-#         
+#                   legs_separated <- separate_leg_chunks(legs)
+#                   
 #         # Iterate through legs
-#         for (j in seq_along(legs_separated)) {
-#           leg <- legs_separated[[j]]
+#                   for (j in seq_along(legs_separated)) {
+#                     leg <- legs_separated[[j]]
 #           message("--- NEW LEG ", j, " (Journey ", i, ") ---")
 #           str(leg, max.level = 2)
 #           message("")
 #         }
 #       }
-#     } else {
+#               } else {
 #       # Maybe journeys is directly a list of legs?
 #       message("Journeys appears to be a list of legs (not journey objects)")
 #       message("")
-#       
+# 
 #       for (j in seq_along(legs_separated)) {
 #         leg <- legs_separated[[j]]
 #         message("--- NEW LEG ", j, " ---")
 #         str(leg, max.level = 2)
 #         message("")
 #       }
-#     }
-#   } else {
+#                 }
+#               } else {
 #     message("Unexpected journeys type: ", paste(journeys_class, collapse = ", "))
 #   }
-#   
+# 
 #   message("=== END EXPLORING JOURNEYS STRUCTURE ===\n")
 #   return(invisible(journeys))
 # }
@@ -197,7 +279,7 @@ extract_journey_details <- function(parsed_data, journey_index = 1) {
     }
     journey <- journeys[journey_index, ]
     legs <- journey$legs[[1]]
-  } else if (is.list(journeys)) {
+      } else if (is.list(journeys)) {
     if (journey_index > length(journeys)) {
       stop("journey_index exceeds number of journeys")
     }
@@ -218,7 +300,7 @@ extract_journey_details <- function(parsed_data, journey_index = 1) {
     # Extract fields with safe access (handles NULLs)
     instruction_detailed <- if (!is.null(leg$instruction) && !is.null(leg$instruction$detailed)) {
       leg$instruction$detailed
-    } else {
+              } else {
       NA_character_
     }
     
@@ -295,5 +377,16 @@ extract_journey_details <- function(parsed_data, journey_index = 1) {
   attr(result, "num_legs") <- num_legs
   attr(result, "journey_index") <- journey_index
   
+  # Print the result
+  message("\n=== EXTRACTED JOURNEY DETAILS ===")
+  message("Journey Index: ", journey_index)
+  message("Number of Legs: ", num_legs)
+  message("\nJourney Details:")
+  print(result)
+  message("=== END EXTRACTED JOURNEY DETAILS ===\n")
+  
   return(result)
 }
+
+parsed_data <- fetch_journey_api("940GZZLUSKS", "940GZZLUSPU", "NoRequirements", "LeastTime")
+extract_journey_details(parsed_data)
