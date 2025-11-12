@@ -22,7 +22,7 @@ ui <- fluidPage(
                          selected = default_naptan_code),
              selectInput("destination_station", "Destination Station:",
                          choices = station_choices,
-                         selected = default_naptan_code),
+                         selected = default_destination_naptan_code),
              actionButton("plan_journey", "Plan Journey", class = "btn-primary")
            )
     ),
