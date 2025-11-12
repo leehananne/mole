@@ -8,22 +8,6 @@ library(dplyr)
 library(lubridate)
 library(DT)
 
-# # Load API keys from config file or environment variables
-# # Priority: config.R (if exists) > environment variables > fallback
-# if (file.exists("config.R")) {
-#   source("config.R", local = TRUE)
-#   message("Loaded API keys from config.R")
-# } else {
-#   # Try to load from environment variables
-#   google_maps_api <- Sys.getenv("GOOGLE_MAPS_API_KEY", unset = NA)
-#   
-#   if (is.na(google_maps_api) || google_maps_api == "") {
-#     google_maps_api <- "AIzaSyAyNRSTGTUmjKXa7CqdmxczCNl4U3HOEYI"
-#   } else {
-#     message("Loaded API keys from environment variables")
-#   }
-# }
-
 fetch_and_process_tfl_stoppoints <- function() {
   urls <- c(
     tube = "https://api.tfl.gov.uk/StopPoint/Mode/tube",
