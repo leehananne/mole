@@ -257,25 +257,51 @@ server <- function(input, output, session) {
       journey_details <- extract_journey_details(parsed_data, journey_index = 1)
       num_legs <- attr(journey_details, "num_legs")
       
-      # Build output lines
-      output_lines <- c()
-      output_lines <- c(output_lines, paste("Journey from ", origin_name, " to ", dest_name, ":"))
-      output_lines <- c(output_lines, paste("Number of legs: ", num_legs))
-      output_lines <- c(output_lines, "")
-      output_lines <- c(output_lines, "Route Details:")
-      output_lines <- c(output_lines, "==========================================")
+      # Calculate total journey duration
+      total_duration <- sum(journey_details$duration, na.rm = TRUE)
       
-      # Format each leg
+      # Build output lines with neat formatting
+      output_lines <- c()
+      output_lines <- c(output_lines, paste("================================================"))
+      output_lines <- c(output_lines, paste("Journey: ", origin_name, " → ", dest_name))
+      output_lines <- c(output_lines, paste("================================================"))
+      output_lines <- c(output_lines, paste("Total Duration: ", total_duration, " minutes"))
+      output_lines <- c(output_lines, paste("Number of Legs: ", num_legs))
+      output_lines <- c(output_lines, paste("================================================"))
+      output_lines <- c(output_lines, "")
+      
+      # Format each leg with clear separation
       for (i in seq_len(nrow(journey_details))) {
         leg <- journey_details[i, ]
-        output_lines <- c(output_lines, "")
-        output_lines <- c(output_lines, paste("Leg ", leg$leg_number, ":"))
-        output_lines <- c(output_lines, paste("  Instruction: ", leg$instruction_detailed))
-        output_lines <- c(output_lines, paste("  Departure:   ", leg$departure_name, " at ", leg$departure_time))
-        output_lines <- c(output_lines, paste("  Arrival:     ", leg$arrival_name, " at ", leg$arrival_time))
-        output_lines <- c(output_lines, paste("  Duration:    ", leg$duration, " minutes"))
+        
+        output_lines <- c(output_lines, paste("--- LEG ", leg$leg_number, " ---"))
+        
+        # Instruction
+        if (!is.na(leg$instruction_detailed) && leg$instruction_detailed != "") {
+          output_lines <- c(output_lines, paste("  Instruction: ", leg$instruction_detailed))
+        }
+        
+        # Departure
+        if (!is.na(leg$departure_name) && leg$departure_name != "") {
+          output_lines <- c(output_lines, paste("  Departure:   ", leg$departure_name, " @ ", leg$departure_time))
+        }
+        
+        # Arrival
+        if (!is.na(leg$arrival_name) && leg$arrival_name != "") {
+          output_lines <- c(output_lines, paste("  Arrival:     ", leg$arrival_name, " @ ", leg$arrival_time))
+        }
+        
+        # Duration and Route
         if (!is.na(leg$route_name) && leg$route_name != "") {
-          output_lines <- c(output_lines, paste("  Route:       ", leg$route_name))
+          output_lines <- c(output_lines, paste("  Duration:    ", leg$duration, " minutes"))
+          output_lines <- c(output_lines, paste("  Route:       ", leg$route_name, " Line"))
+        } else {
+          output_lines <- c(output_lines, paste("  Duration:    ", leg$duration, " minutes"))
+        }
+        
+        # Add spacing between legs (except after last leg)
+        if (i < nrow(journey_details)) {
+          output_lines <- c(output_lines, "")
         }
       }
       
