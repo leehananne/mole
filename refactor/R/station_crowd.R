@@ -96,20 +96,20 @@ fetch_crowd_api <- function(naptan_code) {
     next_crowding_8 = next_crowding_8 * 100
     
     # Check which future time band has lower crowding (prioritize 15 min if both are lower)
-    if (!is.na(next_crowding_4) && next_crowding_4 < current_crowding_level) {
+    if (next_crowding_4 < current_crowding_level) {
       reduction <- current_crowding_level - next_crowding_4
       forecast_message <- paste0("In the next 1 hour (", next_time_band_4, "), the crowd will reduce by ", 
                                 round(reduction, 2), "% (from ", round(current_crowding_level, 2), 
                                 "% to ", round(next_crowding_4, 2), "%).")
       # Also mention if 30 min is even better
-      if (!is.na(next_crowding_8) && next_crowding_8 < next_crowding_4) {
+      if (next_crowding_8 < next_crowding_4) {
         additional_reduction <- next_crowding_4 - next_crowding_8
         forecast_message <- paste0(forecast_message, " It will reduce further by ", 
                                   round(additional_reduction, 2), "% in 30 minutes (", next_time_band_8, ").")
       }
-    } else if (!is.na(next_crowding_8) && next_crowding_8 < current_crowding_level) {
+    } else if (next_crowding_8 < current_crowding_level) {
       reduction <- current_crowding_level - next_crowding_8
-      forecast_message <- paste0("In the next 2 hours (", next_time_band_8, "), the crowd will reduce by ", 
+      forecast_message <- paste("In the next 2 hours (", next_time_band_8, "), the crowd will reduce by ", 
                                 round(reduction, 2), "% (from ", round(current_crowding_level, 2), 
                                 "% to ", round(next_crowding_8, 2), "%).")
     } else {
@@ -122,15 +122,15 @@ fetch_crowd_api <- function(naptan_code) {
   message(forecast_message)
   message("========================\n")
   
-  return(list(
-    current_time_band = current_time_band,
-    current_crowding_level = current_crowding_level,
-    next_15min_time_band = next_time_band_4,
-    next_15min_crowding = next_crowding_4,
-    next_30min_time_band = next_time_band_8,
-    next_30min_crowding = next_crowding_8,
-    forecast_message = forecast_message
-  ))
+  # return(list(
+  #   current_time_band = current_time_band,
+  #   current_crowding_level = current_crowding_level,
+  #   next_1h_time_band = next_time_band_4,
+  #   next_1h_crowding = next_crowding_4,
+  #   next_2h_time_band = next_time_band_8,
+  #   next_2h_crowding = next_crowding_8,
+  #   forecast_message = forecast_message
+  # ))
 }
 
 
