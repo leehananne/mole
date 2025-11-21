@@ -78,7 +78,7 @@ ui <- fluidPage(
                              tags$h3(class = "panel-title", "Journey Route")
                     ),
                     tags$div(class = "panel-body",
-                             verbatimTextOutput("journeyRouteOutput")
+                             journey_router_ui("journeyRouteOutput")
                     )
            )
     )

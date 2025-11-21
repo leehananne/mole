@@ -125,143 +125,6 @@ fetch_journey_api <- function(origin_naptan, destination_naptan,
   return(parsed_data)
 }
 
-# # Function to explore the structure of parsed_data$journeys and its legs
-# explore_journeys_structure <- function(parsed_data) {
-#   message("\n=== EXPLORING JOURNEYS STRUCTURE ===\n")
-# 
-#   # Step 1: Check if journeys exists
-#   if (is.null(parsed_data$journeys)) {
-#     message("ERROR: parsed_data$journeys is NULL")
-#     return(invisible(NULL))
-#   }
-# 
-#       journeys <- parsed_data$journeys
-# 
-#   # Step 2: Check type and length
-#   message("Step 1: Checking journeys object type and length")
-#   journeys_class <- class(journeys)
-#   journeys_length <- length(journeys)
-#   message("  class(parsed_data$journeys): ", paste(journeys_class, collapse = ", "))
-#   message("  length(parsed_data$journeys): ", journeys_length)
-#   message("")
-# 
-#   # Step 3: Handle different structures
-#       if (is.data.frame(journeys)) {
-#     message("Journeys is a data frame with ", nrow(journeys), " rows")
-#     message("Columns: ", paste(names(journeys), collapse = ", "))
-#     message("")
-# 
-#     # Check if legs column exists
-#     if ("legs" %in% names(journeys)) {
-#       message("Found 'legs' column in journeys data frame")
-#       message("")
-# 
-#       # Iterate through each journey
-#           for (i in seq_len(nrow(journeys))) {
-#         message("--- JOURNEY ", i, " ---")
-#         legs <- journeys$legs[[i]]
-# 
-#         if (is.null(legs)) {
-#           message("  Legs is NULL")
-#           message("")
-#           next
-#         }
-# 
-#         message("  Legs type: ", paste(class(legs), collapse = ", "))
-#         message("  Legs length: ", length(legs))
-#         message("")
-# 
-#         # Convert to list if it's a data frame
-#         if (is.data.frame(legs)) {
-#           message("  Converting legs data frame to list...")
-#           legs_list <- lapply(seq_len(nrow(legs)), function(j) {
-#             leg_list <- list()
-#             for (col in names(legs)) {
-#               leg_list[[col]] <- legs[[col]][[j]]
-#             }
-#             return(leg_list)
-#           })
-#           legs <- legs_list
-#         }
-# 
-#         # Now iterate through legs
-#         if (is.list(legs) && length(legs) > 0) {
-#           # Separate into leg chunks if needed
-#           legs_separated <- separate_leg_chunks(legs)
-# 
-#           for (j in seq_along(legs_separated)) {
-#             leg <- legs_separated[[j]]
-#             message("--- NEW LEG ", j, " (Journey ", i, ") ---")
-#             str(leg, max.level = 2)
-#             message("")
-#           }
-#         } else {
-#           message("  Legs is not a list or is empty")
-#           message("")
-#         }
-#       }
-#     } else {
-#       message("No 'legs' column found in journeys data frame")
-#       message("Available columns: ", paste(names(journeys), collapse = ", "))
-#     }
-# 
-#   } else if (is.list(journeys)) {
-#     message("Journeys is a list")
-#     message("")
-# 
-#     # Check if first element has a 'legs' field (meaning journeys is a list of journey objects)
-#     if (length(journeys) > 0 && is.list(journeys[[1]]) && "legs" %in% names(journeys[[1]])) {
-#       message("Journeys appears to be a list of journey objects (each with a 'legs' field)")
-#       message("")
-# 
-#       # Iterate through each journey
-#       for (i in seq_along(journeys)) {
-#         journey <- journeys[[i]]
-#         message("--- JOURNEY ", i, " ---")
-# 
-#         if (is.null(journey$legs)) {
-#           message("  Legs is NULL")
-#           message("")
-#           next
-#         }
-# 
-#         legs <- journey$legs
-#         message("  Legs type: ", paste(class(legs), collapse = ", "))
-#         message("  Legs length: ", length(legs))
-#         message("")
-# 
-#         # Separate into leg chunks if needed
-#                   legs_separated <- separate_leg_chunks(legs)
-#                   
-#         # Iterate through legs
-#                   for (j in seq_along(legs_separated)) {
-#                     leg <- legs_separated[[j]]
-#           message("--- NEW LEG ", j, " (Journey ", i, ") ---")
-#           str(leg, max.level = 2)
-#           message("")
-#         }
-#       }
-#               } else {
-#       # Maybe journeys is directly a list of legs?
-#       message("Journeys appears to be a list of legs (not journey objects)")
-#       message("")
-# 
-#       for (j in seq_along(legs_separated)) {
-#         leg <- legs_separated[[j]]
-#         message("--- NEW LEG ", j, " ---")
-#         str(leg, max.level = 2)
-#         message("")
-#       }
-#                 }
-#               } else {
-#     message("Unexpected journeys type: ", paste(journeys_class, collapse = ", "))
-#   }
-# 
-#   message("=== END EXPLORING JOURNEYS STRUCTURE ===\n")
-#   return(invisible(journeys))
-# }
-
-
 # Extract specific journey information from parsed_data
 # Returns a data frame with leg details for the first journey
 extract_journey_details <- function(parsed_data, journey_index = 1) {
@@ -330,7 +193,7 @@ extract_journey_details <- function(parsed_data, journey_index = 1) {
     }
     
     departure_time <- if (!is.null(leg$departureTime)) {
-      # Extract time portion (HH:MM) from datetime string like "2025-11-12T13:57:00"
+      # Extract time portion (HH:MM) from datetime string e.g. "2025-11-12T13:57:00"
       # Get substring starting after "T" and take first 5 characters (HH:MM)
       time_str <- sub(".*T", "", leg$departureTime)
       substr(time_str, 1, 5)  # Extract HH:MM
@@ -339,7 +202,7 @@ extract_journey_details <- function(parsed_data, journey_index = 1) {
     }
     
     arrival_time <- if (!is.null(leg$arrivalTime)) {
-      # Extract time portion (HH:MM) from datetime string like "2025-11-12T14:12:00"
+      # Extract time portion (HH:MM) from datetime string e.g. "2025-11-12T14:12:00"
       time_str <- sub(".*T", "", leg$arrivalTime)
       substr(time_str, 1, 5)  # Extract HH:MM
     } else {
@@ -391,4 +254,3 @@ extract_journey_details <- function(parsed_data, journey_index = 1) {
 # --------------------------------------------------- COMMENT OUT FOR TESTING
 # parsed_data <- fetch_journey_api("940GZZLUSKS", "940GZZLUSPU", "NoRequirements", "LeastTime")
 # extract_journey_details(parsed_data)
-extract_journey_details(parsed_data)

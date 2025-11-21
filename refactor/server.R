@@ -254,13 +254,14 @@ server <- function(input, output, session) {
     })
   })
 
-  output$journeyRouteOutput <- renderText({
+  output$journeyRouteOutput <- renderUI({
     message("\n>>> Rendering journey route output <<<")
     journey_result <- journey_route_data()
     
     if (is.null(journey_result)) {
       message("  Journey result is NULL - showing default message")
-      return("Select origin and destination stations, then click 'Plan Journey' to find a route.")
+      return(div(class = "journey-container", 
+                 p("Select origin and destination stations, then click 'Plan Journey' to find a route.")))
     }
     
     # Extract parsed data and station names from the stored result
@@ -271,64 +272,32 @@ server <- function(input, output, session) {
     tryCatch({
       # Get journey details for the first journey
       journey_details <- extract_journey_details(parsed_data, journey_index = 1)
-      num_legs <- attr(journey_details, "num_legs")
       
-      # Calculate total journey duration
+      # Transform journey_details to format expected by generate_journey_html()
+      journey_data_formatted <- transform_journey_details(journey_details)
+      
+      # Generate HTML using the component function
+      journey_html <- generate_journey_html(journey_data_formatted)
+      
+      # Add journey summary header
+      num_legs <- attr(journey_details, "num_legs")
       total_duration <- sum(journey_details$duration, na.rm = TRUE)
       
-      # Build output lines with neat formatting
-      output_lines <- c()
-      output_lines <- c(output_lines, paste("================================================"))
-      output_lines <- c(output_lines, paste("Journey: ", origin_name, " → ", dest_name))
-      output_lines <- c(output_lines, paste("================================================"))
-      output_lines <- c(output_lines, paste("Total Duration: ", total_duration, " minutes"))
-      output_lines <- c(output_lines, paste("Number of Legs: ", num_legs))
-      output_lines <- c(output_lines, paste("================================================"))
-      output_lines <- c(output_lines, "")
+      summary_header <- div(
+        style = "margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;",
+        h5(style = "margin-top: 0;", paste("Journey: ", origin_name, " → ", dest_name)),
+        p(style = "margin-bottom: 0; font-size: 12px; color: #666;",
+          paste("Total Duration: ", total_duration, " minutes | ", "Number of Legs: ", num_legs))
+      )
       
-      # Format each leg with clear separation
-      for (i in seq_len(nrow(journey_details))) {
-        leg <- journey_details[i, ]
-        
-        output_lines <- c(output_lines, paste("--- LEG ", leg$leg_number, " ---"))
-        
-        # Instruction
-        if (!is.na(leg$instruction_detailed) && leg$instruction_detailed != "") {
-          output_lines <- c(output_lines, paste("  Instruction: ", leg$instruction_detailed))
-        }
-        
-        # Departure
-        if (!is.na(leg$departure_name) && leg$departure_name != "") {
-          output_lines <- c(output_lines, paste("  Departure:   ", leg$departure_name, " @ ", leg$departure_time))
-        }
-        
-        # Arrival
-        if (!is.na(leg$arrival_name) && leg$arrival_name != "") {
-          output_lines <- c(output_lines, paste("  Arrival:     ", leg$arrival_name, " @ ", leg$arrival_time))
-        }
-        
-        # Duration and Route
-        if (!is.na(leg$route_name) && leg$route_name != "") {
-          output_lines <- c(output_lines, paste("  Duration:    ", leg$duration, " minutes"))
-          output_lines <- c(output_lines, paste("  Route:       ", leg$route_name, " Line"))
-        } else {
-          output_lines <- c(output_lines, paste("  Duration:    ", leg$duration, " minutes"))
-        }
-        
-        # Add spacing between legs (except after last leg)
-        if (i < nrow(journey_details)) {
-          output_lines <- c(output_lines, "")
-        }
-      }
-      
-      result <- paste(output_lines, collapse = "\n")
       message("  Output formatted successfully")
       message(">>> Rendering complete <<<\n")
-      return(result)
+      return(tagList(summary_header, journey_html))
       
     }, error = function(e) {
       message("  Error extracting journey details: ", e$message)
-      return(paste("Error processing journey route:", e$message))
+      return(div(class = "journey-container", 
+                 p(style = "color: red;", paste("Error processing journey route:", e$message))))
     })
   })
 }

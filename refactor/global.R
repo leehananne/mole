@@ -94,5 +94,6 @@ if (length(station_choices) > 1 && !(names(station_choices)[1] %in% c("Loading E
 source("R/station_crowd.R")
 source("R/weather_helpers.R")
 source("R/journey_routing.R")
+source("components/journey-output.R")
 
 
