@@ -44,7 +44,13 @@ journey_router_ui <- function(id) {
 # Returns: Data frame with columns: Line, StartStation, EndStation, Duration
 transform_journey_details <- function(journey_details) {
   if (is.null(journey_details) || nrow(journey_details) == 0) {
-    return(data.frame(Line = character(), StartStation = character(), EndStation = character(), Duration = integer(), stringsAsFactors = FALSE))
+    return(data.frame(Line = character(), 
+    StartStation = character(), 
+    EndStation = character(), 
+    Duration = integer(), 
+    DepartureTime = character(),
+    ArrivalTime = character(),
+    stringsAsFactors = FALSE))
   }
   
   # Extract line name from route_name (remove " Line" suffix if present)
@@ -60,6 +66,8 @@ transform_journey_details <- function(journey_details) {
     StartStation = ifelse(is.na(journey_details$departure_name), "", journey_details$departure_name),
     EndStation = ifelse(is.na(journey_details$arrival_name), "", journey_details$arrival_name),
     Duration = ifelse(is.na(journey_details$duration), 0, journey_details$duration),
+    DepartureTime = ifelse(is.na(journey_details$departure_time), "", journey_details$departure_time),
+    ArrivalTime = ifelse(is.na(journey_details$arrival_time), "", journey_details$arrival_time),
     stringsAsFactors = FALSE
   )
   
@@ -96,14 +104,15 @@ generate_journey_html <- function(journey_data) {
     }
     
     tags$div(class = "journey-step",
+             tags$div(class = "time-info", row$DepartureTime),
              tags$div(class = "graphic-col",
                       tags$div(class = "station-dot", style = paste0("border-color: ", color, ";")),
                       tags$div(class = "connector-line", style = line_style)
              ),
              tags$div(class = "info-col",
                       div(class = "station-name", row$StartStation),
-                      div(class = "line-info", line_display,
-                          span(class = "duration-badge", paste(row$Duration, "mins")))
+                      div(class = "line-info", line_display),
+                      span(class = "duration-badge", paste(row$Duration, "mins"))
              )
     )
   })
@@ -115,6 +124,7 @@ generate_journey_html <- function(journey_data) {
   if(is.null(final_color)) final_color <- "#333"
   
   final_step <- tags$div(class = "journey-step",
+                         tags$div(class = "time-info", last_leg$ArrivalTime),
                          tags$div(class = "graphic-col",
                                   tags$div(class = "station-dot", style = paste0("border-color: ", final_color, ";"))
                          ),

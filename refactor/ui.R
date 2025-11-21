@@ -49,15 +49,7 @@ ui <- fluidPage(
            )
     ),
     column(width = 8,
-           tags$div(class = "panel panel-info",
-                    tags$div(class = "panel-heading",
-                             tags$h3(class = "panel-title", "Predicted Crowding Levels (% Baseline)")
-                    ),
-                    tags$div(class = "panel-body",
-                             plotlyOutput("tflCrowdingPlot", height = "450px")
-                    )
-           ),
-           tags$div(class = "panel panel-primary", style = "margin-top: 20px;",
+           tags$div(class = "panel panel-primary",
                     tags$div(class = "panel-heading",
                              tags$h3(class = "panel-title", textOutput("weatherTitle"))
                     ),
