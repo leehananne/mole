@@ -122,15 +122,17 @@ fetch_crowd_api <- function(naptan_code) {
   message(forecast_message)
   message("========================\n")
   
-  # return(list(
-  #   current_time_band = current_time_band,
-  #   current_crowding_level = current_crowding_level,
-  #   next_1h_time_band = next_time_band_4,
-  #   next_1h_crowding = next_crowding_4,
-  #   next_2h_time_band = next_time_band_8,
-  #   next_2h_crowding = next_crowding_8,
-  #   forecast_message = forecast_message
-  # ))
+  return(list(
+    current_time_band = current_time_band,
+    current_crowding_level = current_crowding_level,
+    next_1h_time_band = next_time_band_4,
+    next_1h_crowding = next_crowding_4,
+    next_2h_time_band = next_time_band_8,
+    next_2h_crowding = next_crowding_8,
+    forecast_message = forecast_message
+  ))
+  
+  # return(forecast_message)
 }
 
 

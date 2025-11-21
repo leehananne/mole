@@ -391,3 +391,4 @@ extract_journey_details <- function(parsed_data, journey_index = 1) {
 # --------------------------------------------------- COMMENT OUT FOR TESTING
 # parsed_data <- fetch_journey_api("940GZZLUSKS", "940GZZLUSPU", "NoRequirements", "LeastTime")
 # extract_journey_details(parsed_data)
+extract_journey_details(parsed_data)

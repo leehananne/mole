@@ -21,6 +21,14 @@ server <- function(input, output, session) {
     master_tube_locations %>% dplyr::filter(NaptanCode == input$selected_station_naptan)
   })
 
+  origin_station_info <- reactive({
+    req(input$origin_station)
+    if (!exists("master_tube_locations") || !is.data.frame(master_tube_locations) || nrow(master_tube_locations) == 0) {
+      return(data.frame())
+    }
+    master_tube_locations %>% dplyr::filter(NaptanCode == input$origin_station)
+  })
+
   tfl_crowding_data <- reactive({
     req(input$selected_station_naptan, input$tfl_days)
     if (length(station_choices) == 0 || names(station_choices)[1] %in% c("Loading Error")) {
@@ -130,9 +138,9 @@ server <- function(input, output, session) {
   })
 
   output$weatherTitle <- renderText({
-    info <- selected_station_info()
+    info <- origin_station_info()
     if (is.null(info) || nrow(info) == 0) {
-      return("Waiting for station selection...")
+      return("Waiting for origin station selection...")
     }
     if (is.na(info$StationName[1]) || info$StationName[1] == "") {
       return("Station name missing.")
@@ -144,7 +152,7 @@ server <- function(input, output, session) {
 
   weather_api_data <- reactive({
     autoInvalidate()
-    info <- selected_station_info()
+    info <- origin_station_info()
     if (is.null(info) || nrow(info) == 0) return(NULL)
     if (is.na(info$Latitude) || is.na(info$Longitude)) return(NULL)
     fetch_weather_data(google_maps_api, info$Latitude[1], info$Longitude[1], info$StationName[1])
@@ -179,7 +187,7 @@ server <- function(input, output, session) {
   })
 
   # Crowding forecast reactive
-  crowding_forecast <- reactive({
+  crowding_forecast <- eventReactive(input$plan_journey, {
     req(input$selected_station_naptan)
     if (length(station_choices) == 0 || names(station_choices)[1] %in% c("Loading Error")) {
       return(NULL)
@@ -192,7 +200,7 @@ server <- function(input, output, session) {
       return(NULL)
     })
   })
-
+  
   output$crowdingForecast <- renderText({
     forecast_data <- crowding_forecast()
     if (is.null(forecast_data) || is.null(forecast_data$forecast_message)) {
@@ -214,6 +222,10 @@ server <- function(input, output, session) {
       return(NULL)
     }
     
+    # Store station names at the time of button click
+    origin_name <- names(station_choices[station_choices == input$origin_station])[1] %||% input$origin_station
+    dest_name <- names(station_choices[station_choices == input$destination_station])[1] %||% input$destination_station
+    
     # Get preferences from UI inputs (with defaults if not set)
     access_pref <- input$accessibility_preference %||% "NoRequirements"
     journey_pref <- input$journey_preference %||% "LeastTime"
@@ -225,10 +237,13 @@ server <- function(input, output, session) {
       parsed_data <- fetch_journey_api(input$origin_station, input$destination_station, 
                                        access_pref, journey_pref)
       message(">>> Journey route fetched successfully! <<<\n")
-      return(parsed_data)
+      # Return a list with both parsed data and station names
+      return(list(
+        parsed_data = parsed_data,
+        origin_name = origin_name,
+        dest_name = dest_name
+      ))
     }, error = function(e) {
-      origin_name <- names(station_choices[station_choices == input$origin_station])[1] %||% input$origin_station
-      dest_name <- names(station_choices[station_choices == input$destination_station])[1] %||% input$destination_station
       message("Error fetching journey: ", e$message)
       showNotification(
         paste("Failed to fetch journey route from", origin_name, "to", dest_name, ". Please check the station codes or try again."),
@@ -241,16 +256,17 @@ server <- function(input, output, session) {
 
   output$journeyRouteOutput <- renderText({
     message("\n>>> Rendering journey route output <<<")
-    parsed_data <- journey_route_data()
+    journey_result <- journey_route_data()
     
-    if (is.null(parsed_data)) {
-      message("  Parsed data is NULL - showing default message")
+    if (is.null(journey_result)) {
+      message("  Journey result is NULL - showing default message")
       return("Select origin and destination stations, then click 'Plan Journey' to find a route.")
     }
     
-    # Extract journey information using extract_journey_details
-    origin_name <- names(station_choices[station_choices == input$origin_station])[1] %||% input$origin_station
-    dest_name <- names(station_choices[station_choices == input$destination_station])[1] %||% input$destination_station
+    # Extract parsed data and station names from the stored result
+    parsed_data <- journey_result$parsed_data
+    origin_name <- journey_result$origin_name
+    dest_name <- journey_result$dest_name
     
     tryCatch({
       # Get journey details for the first journey
