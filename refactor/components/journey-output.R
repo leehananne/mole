@@ -30,7 +30,6 @@ journey_router_ui <- function(id) {
         .station-name { font-weight: bold; font-size: 14px; }
         .line-info { font-size: 12px; color: #666; }
         .duration-badge { background: #eee; padding: 1px 5px; border-radius: 3px; font-size: 10px; margin-left: 5px; }
-        .time-info { font-size: 11px; color: #888; margin-top: 2px; }
       "))
     ),
     # The placeholder where the router will appear
@@ -41,39 +40,18 @@ journey_router_ui <- function(id) {
 # --- 3. TRANSFORMATION FUNCTION ---
 # Converts journey_details from extract_journey_details() to format expected by generate_journey_html()
 # Arguments:
-#   journey_details: Data frame from extract_journey_details() with columns: route_name, departure_name, arrival_name, duration, departure_time, arrival_time
-# Returns: Data frame with columns: Line, StartStation, EndStation, Duration, DepartureTime, ArrivalTime
+#   journey_details: Data frame from extract_journey_details() with columns: route_name, departure_name, arrival_name, duration
+# Returns: Data frame with columns: Line, StartStation, EndStation, Duration
 transform_journey_details <- function(journey_details) {
   if (is.null(journey_details) || nrow(journey_details) == 0) {
-    return(data.frame(
-      Line = character(), 
-      StartStation = character(), 
-      EndStation = character(), 
-      Duration = integer(),
-      DepartureTime = character(),
-      ArrivalTime = character(),
-      stringsAsFactors = FALSE
-    ))
+    return(data.frame(Line = character(), StartStation = character(), EndStation = character(), Duration = integer(), stringsAsFactors = FALSE))
   }
   
   # Extract line name from route_name (remove " Line" suffix if present)
   line_names <- ifelse(
-    is.na(journey_details$route_name) || journey_details$route_name == "",
+    is.na(journey_details$route_name) | journey_details$route_name == "",
     "Walking",
     gsub("\\s+Line$", "", journey_details$route_name, ignore.case = TRUE)
-  )
-  
-  # Handle times - convert NA to empty string for display
-  departure_times <- ifelse(
-    is.na(journey_details$departure_time) | journey_details$departure_time == "",
-    "",
-    journey_details$departure_time
-  )
-  
-  arrival_times <- ifelse(
-    is.na(journey_details$arrival_time) | journey_details$arrival_time == "",
-    "",
-    journey_details$arrival_time
   )
   
   # Create transformed data frame
@@ -82,8 +60,6 @@ transform_journey_details <- function(journey_details) {
     StartStation = ifelse(is.na(journey_details$departure_name), "", journey_details$departure_name),
     EndStation = ifelse(is.na(journey_details$arrival_name), "", journey_details$arrival_name),
     Duration = ifelse(is.na(journey_details$duration), 0, journey_details$duration),
-    DepartureTime = departure_times,
-    ArrivalTime = arrival_times,
     stringsAsFactors = FALSE
   )
   
@@ -93,7 +69,7 @@ transform_journey_details <- function(journey_details) {
 # --- 4. LOGIC FUNCTION ---
 # Call this in your server.R inside renderUI
 # Arguments:
-#   journey_data: Data frame with columns: Line, StartStation, EndStation, Duration, DepartureTime, ArrivalTime
+#   journey_data: Data frame with columns: Line, StartStation, EndStation, Duration
 generate_journey_html <- function(journey_data) {
   
   # Error handling: if no data, return nothing
@@ -119,34 +95,16 @@ generate_journey_html <- function(journey_data) {
       paste(line_name, "Line")
     }
     
-    # Build time info text
-    time_parts <- c()
-    if (!is.na(row$DepartureTime) && row$DepartureTime != "") {
-      time_parts <- c(time_parts, paste("Depart:", row$DepartureTime))
-    }
-    if (!is.na(row$ArrivalTime) && row$ArrivalTime != "") {
-      time_parts <- c(time_parts, paste("Arrive:", row$ArrivalTime))
-    }
-    time_display <- paste(time_parts, collapse = " | ")
-    
-    # Build info column content
-    info_content <- list(
-      div(class = "station-name", row$StartStation),
-      div(class = "line-info", line_display,
-          span(class = "duration-badge", paste(row$Duration, "mins")))
-    )
-    
-    # Add time info if available
-    if (time_display != "") {
-      info_content <- c(info_content, list(div(class = "time-info", time_display)))
-    }
-    
     tags$div(class = "journey-step",
              tags$div(class = "graphic-col",
                       tags$div(class = "station-dot", style = paste0("border-color: ", color, ";")),
                       tags$div(class = "connector-line", style = line_style)
              ),
-             tags$div(class = "info-col", info_content)
+             tags$div(class = "info-col",
+                      div(class = "station-name", row$StartStation),
+                      div(class = "line-info", line_display,
+                          span(class = "duration-badge", paste(row$Duration, "mins")))
+             )
     )
   })
   
@@ -156,20 +114,13 @@ generate_journey_html <- function(journey_data) {
   final_color <- tube_colors[[final_line]]
   if(is.null(final_color)) final_color <- "#333"
   
-  # Format arrival time for final destination
-  final_arrival_text <- if (!is.na(last_leg$ArrivalTime) && last_leg$ArrivalTime != "") {
-    paste("Arrive:", last_leg$ArrivalTime)
-  } else {
-    "Arrive"
-  }
-  
   final_step <- tags$div(class = "journey-step",
                          tags$div(class = "graphic-col",
                                   tags$div(class = "station-dot", style = paste0("border-color: ", final_color, ";"))
                          ),
                          tags$div(class = "info-col",
                                   div(class = "station-name", last_leg$EndStation),
-                                  div(class = "line-info", final_arrival_text)
+                                  div(class = "line-info", "Arrive")
                          )
   )
   
