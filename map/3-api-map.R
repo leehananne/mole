@@ -8,7 +8,7 @@ library(stringr)  # For splitting the coordinates string
 library(dplyr)    # For data manipulation
 # library(DT) has been removed
 
-source("2-api-lifts.R")
+source("2-station-info-testing/facility-combined.R")
 
 station_map_data <- station_table_data %>%
   select(

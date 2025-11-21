@@ -13,7 +13,7 @@ library(dplyr)
 #    (Consolidated from previous steps to ensure this file is self-contained)
 # ==============================================================================
 
-source("2-api-lifts.R")
+source("2-station-info-testing/facility-combined.R")
 
 station_map_data <- station_table_data %>%
   select(
