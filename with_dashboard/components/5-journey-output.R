@@ -7,7 +7,7 @@ tube_colors <- c(
   "Victoria" = "#0098D4",
   "District" = "#00782A",
   "Central" = "#E32017",
-  "iccadilly" = "#003688",
+  "Piccadilly" = "#003688",
   "Northern" = "#000000",
   "Jubilee" = "#A0A5A9",
   "Bakerloo" = "#B36305",
@@ -65,7 +65,7 @@ journey_router_ui <- function(id) {
 #   journey_details: Data frame from extract_journey_details() with columns: route_name, departure_name, arrival_name, duration
 # Returns: Data frame with columns: Line, StartStation, EndStation, Duration
 transform_journey_details <- function(journey_details) {
-  if (is.null(journey_details) || nrow(journey_details) == 0) {
+  if (is.null(journey_details) || !is.data.frame(journey_details) || nrow(journey_details) == 0) {
     return(data.frame(Line = character(), 
     StartStation = character(), 
     EndStation = character(), 
@@ -75,21 +75,41 @@ transform_journey_details <- function(journey_details) {
     stringsAsFactors = FALSE))
   }
   
+  # Validate required columns exist
+  required_cols <- c("route_name", "departure_name", "arrival_name", "duration", "departure_time", "arrival_time")
+  missing_cols <- setdiff(required_cols, names(journey_details))
+  if (length(missing_cols) > 0) {
+    stop(paste("Missing required columns in journey_details:", paste(missing_cols, collapse = ", ")))
+  }
+  
   # Extract line name from route_name (remove " Line" suffix if present)
+  # Use safe extraction with length checks
+  route_name_vec <- journey_details$route_name
+  if (is.null(route_name_vec) || length(route_name_vec) == 0) {
+    route_name_vec <- rep(NA_character_, nrow(journey_details))
+  }
+  
   line_names <- ifelse(
-    is.na(journey_details$route_name) | journey_details$route_name == "",
+    is.na(route_name_vec) | route_name_vec == "",
     "Walking",
-    gsub("\\s+Line$", "", journey_details$route_name, ignore.case = TRUE)
+    gsub("\\s+Line$", "", route_name_vec, ignore.case = TRUE)
   )
+  
+  # Safely extract other columns with length checks
+  departure_name_vec <- if (length(journey_details$departure_name) > 0) journey_details$departure_name else rep("", nrow(journey_details))
+  arrival_name_vec <- if (length(journey_details$arrival_name) > 0) journey_details$arrival_name else rep("", nrow(journey_details))
+  duration_vec <- if (length(journey_details$duration) > 0) journey_details$duration else rep(0, nrow(journey_details))
+  departure_time_vec <- if (length(journey_details$departure_time) > 0) journey_details$departure_time else rep("", nrow(journey_details))
+  arrival_time_vec <- if (length(journey_details$arrival_time) > 0) journey_details$arrival_time else rep("", nrow(journey_details))
   
   # Create transformed data frame
   result <- data.frame(
     Line = line_names,
-    StartStation = ifelse(is.na(journey_details$departure_name), "", journey_details$departure_name),
-    EndStation = ifelse(is.na(journey_details$arrival_name), "", journey_details$arrival_name),
-    Duration = ifelse(is.na(journey_details$duration), 0, journey_details$duration),
-    DepartureTime = ifelse(is.na(journey_details$departure_time), "", journey_details$departure_time),
-    ArrivalTime = ifelse(is.na(journey_details$arrival_time), "", journey_details$arrival_time),
+    StartStation = ifelse(is.na(departure_name_vec), "", departure_name_vec),
+    EndStation = ifelse(is.na(arrival_name_vec), "", arrival_name_vec),
+    Duration = ifelse(is.na(duration_vec), 0, duration_vec),
+    DepartureTime = ifelse(is.na(departure_time_vec), "", departure_time_vec),
+    ArrivalTime = ifelse(is.na(arrival_time_vec), "", arrival_time_vec),
     stringsAsFactors = FALSE
   )
   
@@ -104,9 +124,16 @@ generate_journey_html <- function(journey_data) {
   
   # Clear any previous state - ensure we start fresh
   # Error handling: if no data, return nothing
-  if (is.null(journey_data) || nrow(journey_data) == 0) {
+  if (is.null(journey_data) || !is.data.frame(journey_data) || nrow(journey_data) == 0) {
     return(div(class = "journey-container", 
                p("No journey data available. Select origin and destination stations, then click 'Plan Journey' to find a route.")))
+  }
+  
+  # Validate required columns exist
+  required_cols <- c("Line", "StartStation", "EndStation", "Duration", "DepartureTime", "ArrivalTime")
+  missing_cols <- setdiff(required_cols, names(journey_data))
+  if (length(missing_cols) > 0) {
+    stop(paste("Missing required columns:", paste(missing_cols, collapse = ", ")))
   }
   
   # Initialize fresh list for steps - clear any previous data
@@ -115,16 +142,62 @@ generate_journey_html <- function(journey_data) {
   # Generate HTML for each leg
   for (i in seq_len(nrow(journey_data))) {
     # Extract scalar values from the row to avoid vector indexing issues
-    line_val <- journey_data$Line[i]
-    start_station <- journey_data$StartStation[i]
-    end_station <- journey_data$EndStation[i]
-    duration_val <- journey_data$Duration[i]
-    departure_time <- journey_data$DepartureTime[i]
+    # Add safety checks for each extraction - ensure we get scalars, not vectors
+    line_val <- if (i <= length(journey_data$Line) && i > 0) {
+      val <- journey_data$Line[i]
+      # Ensure scalar - take first element if vector
+      if (length(val) > 1) val[1] else val
+    } else {
+      NA_character_
+    }
     
-    line_name <- ifelse(is.na(line_val) || line_val == "", "Walking", line_val)
+    start_station <- if (i <= length(journey_data$StartStation) && i > 0) {
+      val <- journey_data$StartStation[i]
+      if (length(val) > 1) val[1] else val
+    } else {
+      ""
+    }
+    
+    end_station <- if (i <= length(journey_data$EndStation) && i > 0) {
+      val <- journey_data$EndStation[i]
+      if (length(val) > 1) val[1] else val
+    } else {
+      ""
+    }
+    
+    duration_val <- if (i <= length(journey_data$Duration) && i > 0) {
+      val <- journey_data$Duration[i]
+      if (length(val) > 1) val[1] else val
+    } else {
+      0
+    }
+    
+    departure_time <- if (i <= length(journey_data$DepartureTime) && i > 0) {
+      val <- journey_data$DepartureTime[i]
+      if (length(val) > 1) val[1] else val
+    } else {
+      ""
+    }
+    
+    # Ensure line_name is a scalar character
+    if (is.na(line_val) || length(line_val) == 0 || (length(line_val) == 1 && line_val == "")) {
+      line_name <- "Walking"
+    } else {
+      line_name <- as.character(line_val[1])  # Force scalar
+    }
+    
     # Normalize line name for color lookup (e.g., "Hammersmith & City" -> "Hammersmith-City")
     normalized_line_name <- normalize_line_name(line_name)
-    color <- tube_colors[[normalized_line_name]]
+    
+    # Safe color lookup - ensure normalized_line_name is a scalar
+    if (length(normalized_line_name) > 1) {
+      normalized_line_name <- normalized_line_name[1]
+    }
+    color <- tryCatch({
+      tube_colors[[as.character(normalized_line_name)]]
+    }, error = function(e) {
+      NULL
+    })
     if(is.null(color)) color <- "#333" # Fallback color
     
     line_style <- paste0("background-color: ", color, ";")
@@ -154,14 +227,47 @@ generate_journey_html <- function(journey_data) {
   
   # Generate Final Destination Dot
   last_row_idx <- nrow(journey_data)
-  final_line_val <- journey_data$Line[last_row_idx]
-  final_end_station <- journey_data$EndStation[last_row_idx]
-  final_arrival_time <- journey_data$ArrivalTime[last_row_idx]
+  # Add safety checks for final destination extraction - ensure scalars
+  final_line_val <- if (last_row_idx <= length(journey_data$Line) && last_row_idx > 0) {
+    val <- journey_data$Line[last_row_idx]
+    if (length(val) > 1) val[1] else val
+  } else {
+    NA_character_
+  }
   
-  final_line <- ifelse(is.na(final_line_val) || final_line_val == "", "Walking", final_line_val)
+  final_end_station <- if (last_row_idx <= length(journey_data$EndStation) && last_row_idx > 0) {
+    val <- journey_data$EndStation[last_row_idx]
+    if (length(val) > 1) val[1] else val
+  } else {
+    ""
+  }
+  
+  final_arrival_time <- if (last_row_idx <= length(journey_data$ArrivalTime) && last_row_idx > 0) {
+    val <- journey_data$ArrivalTime[last_row_idx]
+    if (length(val) > 1) val[1] else val
+  } else {
+    ""
+  }
+  
+  # Ensure final_line is a scalar character
+  if (is.na(final_line_val) || length(final_line_val) == 0 || (length(final_line_val) == 1 && final_line_val == "")) {
+    final_line <- "Walking"
+  } else {
+    final_line <- as.character(final_line_val[1])  # Force scalar
+  }
+  
   # Normalize line name for color lookup (e.g., "Hammersmith & City" -> "Hammersmith-City")
   normalized_final_line <- normalize_line_name(final_line)
-  final_color <- tube_colors[[normalized_final_line]]
+  
+  # Safe color lookup - ensure normalized_final_line is a scalar
+  if (length(normalized_final_line) > 1) {
+    normalized_final_line <- normalized_final_line[1]
+  }
+  final_color <- tryCatch({
+    tube_colors[[as.character(normalized_final_line)]]
+  }, error = function(e) {
+    NULL
+  })
   if(is.null(final_color)) final_color <- "#333"
   
   final_step <- tags$div(class = "journey-step",
