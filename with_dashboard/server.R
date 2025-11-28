@@ -62,9 +62,11 @@ server <- function(input, output, session) {
       return(NULL)
     })
   })
-
+  
   output$journeyRouteOutput <- renderUI({
     message("\n>>> Rendering journey route output <<<")
+    
+    # Clear any previous output - start fresh
     journey_result <- journey_route_data()
     
     if (is.null(journey_result)) {
@@ -85,7 +87,7 @@ server <- function(input, output, session) {
       # Transform journey_details to format expected by generate_journey_html()
       journey_data_formatted <- transform_journey_details(journey_details)
       
-      # Generate HTML using the component function
+      # Generate HTML using the component function (clears its own state internally)
       journey_html <- generate_journey_html(journey_data_formatted)
       
       # Add journey summary header
@@ -177,6 +179,48 @@ server <- function(input, output, session) {
     statement <- paste(lines, collapse = "\n")
     if (!is.character(statement)) { statement <- "Error formatting weather statement." }
     return(statement)
+  })
+
+  # ==============================================================================
+  # STATION CROWDING TAB
+  # ==============================================================================
+  crowd_naptan_reactive <- eventReactive(input$crowd_update, {
+    req(input$crowd_naptan)
+    trimws(input$crowd_naptan)
+  })
+
+  output$crowding_tab_plot <- renderPlot({
+    naptan <- crowd_naptan_reactive()
+    validate(
+      need(naptan != "", "Please enter a valid Naptan station code.")
+    )
+    plot_crowd(naptan)
+  })
+
+  # ==============================================================================
+  # BOTTOM OVERLAY CROWDING PLOT
+  # ==============================================================================
+  output$crowding_plot <- renderPlot({
+    # Choose which station to use based on the active left-hand tab
+    active_tab <- input$left_tabs %||% "Stations"
+    
+    naptan <- NULL
+    
+    if (active_tab == "Stations") {
+      # From the station search tab (autocomplete)
+      naptan <- input$station_selector
+    } else if (active_tab == "Journey") {
+      # From the journey tab (destination station)
+      naptan <- input$destination_station
+    } else {
+      # Fallback: use the manual Naptan from the Crowding tab if available
+      naptan <- tryCatch(crowd_naptan_reactive(), error = function(e) NULL)
+    }
+    
+    validate(
+      need(!is.null(naptan) && naptan != "", "Select a station (or enter a Naptan code) to see crowding levels.")
+    )
+    plot_crowd(naptan)
   })
 
 }

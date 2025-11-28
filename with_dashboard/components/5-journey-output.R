@@ -102,16 +102,26 @@ transform_journey_details <- function(journey_details) {
 #   journey_data: Data frame with columns: Line, StartStation, EndStation, Duration
 generate_journey_html <- function(journey_data) {
   
+  # Clear any previous state - ensure we start fresh
   # Error handling: if no data, return nothing
   if (is.null(journey_data) || nrow(journey_data) == 0) {
     return(div(class = "journey-container", 
                p("No journey data available. Select origin and destination stations, then click 'Plan Journey' to find a route.")))
   }
   
+  # Initialize fresh list for steps - clear any previous data
+  steps_html <- list()
+  
   # Generate HTML for each leg
-  steps_html <- lapply(seq_len(nrow(journey_data)), function(i) {
-    row <- journey_data[i, ]
-    line_name <- ifelse(is.na(row$Line) || row$Line == "", "Walking", row$Line)
+  for (i in seq_len(nrow(journey_data))) {
+    # Extract scalar values from the row to avoid vector indexing issues
+    line_val <- journey_data$Line[i]
+    start_station <- journey_data$StartStation[i]
+    end_station <- journey_data$EndStation[i]
+    duration_val <- journey_data$Duration[i]
+    departure_time <- journey_data$DepartureTime[i]
+    
+    line_name <- ifelse(is.na(line_val) || line_val == "", "Walking", line_val)
     # Normalize line name for color lookup (e.g., "Hammersmith & City" -> "Hammersmith-City")
     normalized_line_name <- normalize_line_name(line_name)
     color <- tube_colors[[normalized_line_name]]
@@ -127,39 +137,47 @@ generate_journey_html <- function(journey_data) {
       paste(line_name, "Line")
     }
     
-    tags$div(class = "journey-step",
-             tags$div(class = "time-info", row$DepartureTime),
+    step_html <- tags$div(class = "journey-step",
+             tags$div(class = "time-info", departure_time),
              tags$div(class = "graphic-col",
                       tags$div(class = "station-dot", style = paste0("border-color: ", color, ";")),
                       tags$div(class = "connector-line", style = line_style)
              ),
              tags$div(class = "info-col",
-                      div(class = "station-name", row$StartStation),
+                      div(class = "station-name", start_station),
                       div(class = "line-info", line_display),
-                      span(class = "duration-badge", paste(row$Duration, "mins"))
+                      span(class = "duration-badge", paste(duration_val, "mins"))
              )
     )
-  })
+    steps_html[[i]] <- step_html
+  }
   
   # Generate Final Destination Dot
-  last_leg <- journey_data[nrow(journey_data), ]
-  final_line <- ifelse(is.na(last_leg$Line) || last_leg$Line == "", "Walking", last_leg$Line)
+  last_row_idx <- nrow(journey_data)
+  final_line_val <- journey_data$Line[last_row_idx]
+  final_end_station <- journey_data$EndStation[last_row_idx]
+  final_arrival_time <- journey_data$ArrivalTime[last_row_idx]
+  
+  final_line <- ifelse(is.na(final_line_val) || final_line_val == "", "Walking", final_line_val)
   # Normalize line name for color lookup (e.g., "Hammersmith & City" -> "Hammersmith-City")
   normalized_final_line <- normalize_line_name(final_line)
   final_color <- tube_colors[[normalized_final_line]]
   if(is.null(final_color)) final_color <- "#333"
   
   final_step <- tags$div(class = "journey-step",
-                         tags$div(class = "time-info", last_leg$ArrivalTime),
+                         tags$div(class = "time-info", final_arrival_time),
                          tags$div(class = "graphic-col",
                                   tags$div(class = "station-dot", style = paste0("border-color: ", final_color, ";"))
                          ),
                          tags$div(class = "info-col",
-                                  div(class = "station-name", last_leg$EndStation),
+                                  div(class = "station-name", final_end_station),
                                   div(class = "line-info", "Arrive")
                          )
   )
   
-  # Return the bundle
-  div(class = "journey-container", steps_html, final_step)
+  # Return the bundle - use tagList to properly combine all elements
+  # This ensures clean rendering without accumulating old data
+  div(class = "journey-container", 
+      tagList(steps_html, final_step)
+  )
 }

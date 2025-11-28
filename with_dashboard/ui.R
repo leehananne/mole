@@ -143,6 +143,7 @@ ui <- fluidPage(
   # --- Left Panel ---
   div(id = "left-panel",
       tabsetPanel(
+        id = "left_tabs",
         tabPanel("Stations", br(), component_station_search()),
         tabPanel("Journey", br(), component_journey_planner())
       )
