@@ -1,4 +1,5 @@
 library(shiny)
+library(bslib)
 source("components/4-station-autofill.R")
 source("components/4-map-ui.R")
 source("components/5-journey-output.R")
@@ -43,55 +44,76 @@ component_station_search <- function() {
   )
 }
 
+
 # --- B. Left Panel: Journey Planning Tab ---
 component_journey_planner <- function() {
   tagList(
-    h4("Plan a Journey"),
+    h4("Plan a Journey", class = "mb-3"), # mb-3 adds margin bottom
     
     # i. Origin and Destination fields
-    selectInput("origin_station", "Origin Station:",
-                choices = station_choices,
-                selected = if(exists("default_naptan_code")) default_naptan_code else NULL,
-                width = "100%"),
-    selectInput("destination_station", "Destination Station:",
-                choices = station_choices,
-                selected = if(exists("default_destination_naptan_code")) default_destination_naptan_code else NULL,
-                width = "100%"),
+    div(class = "card p-3 shadow-sm mb-3", # Card styling for grouping
+        selectInput("origin_station", "Origin Station:",
+                    choices = if(exists("station_choices")) station_choices else NULL,
+                    selected = if(exists("default_naptan_code")) default_naptan_code else NULL,
+                    width = "100%"),
+        selectInput("destination_station", "Destination Station:",
+                    choices = if(exists("station_choices")) station_choices else NULL,
+                    selected = if(exists("default_destination_naptan_code")) default_destination_naptan_code else NULL,
+                    width = "100%")
+    ),
+    
+    # ii. Preferences Accordion
+    # Note: We use flush = FALSE to keep the borders, looks better in sidebars
+    accordion(
+      id = "journey_preferences_accordion",
+      open = FALSE, # Start closed to save space
+      multiple = FALSE, # Only one panel open at a time (cleaner)
+      
+      accordion_panel(
+        title = "Journey Mode",
+        icon = icon("route"),
+        # Radio buttons with custom styling
+        div(class = "p-2",
+            radioButtons("journey_preference", NULL,
+                         choices = list(
+                           "Fastest Route" = "LeastTime",
+                           "Least Walking" = "LeastWalking",
+                           "Fewest Changes" = "LeastInterchange"
+                         ),
+                         selected = "LeastTime")
+        )
+      ),
+      
+      accordion_panel(
+        title = "Accessibility",
+        icon = icon("wheelchair"),
+        div(class = "p-2",
+            radioButtons("accessibility_preference", NULL,
+                         choices = list(
+                           "None" = "NoRequirements",
+                           "Step-free to Train" = "StepFreeToVehicle",
+                           "Step-free to Platform" = "StepFreeToPlatform",
+                           "No Stairs" = "NoSolidStairs",
+                           "No Escalators" = "NoEscalators",
+                           "No Elevators" = "NoElevators"
+                         ),
+                         selected = "NoRequirements")
+        )
+      )
+    ),
     
     hr(),
     
-    # Journey preferences
-    h5("Journey Preference:"),
-    radioButtons("journey_preference", NULL,
-                choices = list("Least Interchange" = "LeastInterchange",
-                              "Least Time" = "LeastTime",
-                              "Least Walking" = "LeastWalking"),
-                selected = "LeastTime",
-                inline = FALSE),
+    # styled action button
+    actionButton("plan_journey", "Plan Journey", 
+                 icon = icon("paper-plane"),
+                 class = "btn-primary btn-lg w-100 shadow-sm"),
     
     hr(),
     
-    # Accessibility preferences
-    h5("Accessibility Preference:"),
-    radioButtons("accessibility_preference", NULL,
-                choices = list("No Requirements" = "NoRequirements",
-                              "No Solid Stairs" = "NoSolidStairs",
-                              "No Escalators" = "NoEscalators",
-                              "No Elevators" = "NoElevators",
-                              "Step Free to Vehicle" = "StepFreeToVehicle",
-                              "Step Free to Platform" = "StepFreeToPlatform"),
-                selected = "NoRequirements",
-                inline = FALSE),
-    
-    hr(),
-    
-    actionButton("plan_journey", "Plan Journey", class = "btn-primary", width = "100%"),
-    
-    hr(),
-    
-    # ii. Relevant journey information block
-    div(class = "journey-results-container",
-        h5("Journey Route"),
+    # iii. Results container
+    div(class = "journey-results-container mt-3",
+        h5("Suggested Route"),
         journey_router_ui("journeyRouteOutput")
     )
   )
@@ -140,8 +162,12 @@ component_bottom_overlay <- function() {
 # ==============================================================================
 # 2. MAIN UI
 # ==============================================================================
+# Global CSS and JS Assets
+# ==============================================================================
 
 ui <- fluidPage(
+  theme = bs_theme(version = 5, preset = "zephyr"),
+
   class = "dashboard-container",
   
   tags$head(
