@@ -12,7 +12,7 @@ server <- function(input, output, session) {
     if (!is.null(input$station_selector) && input$station_selector != "") {
       message("Station selected: ", input$station_selector)
     }
-  })
+  }, ignoreNULL = FALSE)
   
   # ==============================================================================
   # JOURNEY PLANNER LOGIC
@@ -327,14 +327,24 @@ server <- function(input, output, session) {
     # Wrap plot_crowd in tryCatch to handle errors gracefully
     tryCatch({
       p <- plot_crowd(naptan)
-      message("Plot generated successfully")
+      message("Plot generated successfully, class: ", class(p))
+      if (is.null(p)) {
+        message("WARNING: plot_crowd returned NULL")
+        return(ggplot() + 
+               annotate("text", x = 0.5, y = 0.5, label = "Plot returned NULL", size = 4) +
+               theme_void())
+      }
       return(p)
     }, error = function(e) {
       message("ERROR in plot_crowd: ", e$message)
+      message("Error traceback: ", paste(capture.output(traceback()), collapse = "\n"))
       # Return an empty plot with error message
       return(ggplot() + 
-             annotate("text", x = 0.5, y = 0.5, label = paste("Error:", e$message), size = 4) +
-             theme_void())
+             annotate("text", x = 0.5, y = 0.5, 
+                     label = paste("Error loading plot:\n", e$message), 
+                     size = 3, hjust = 0.5, vjust = 0.5) +
+             theme_void() +
+             labs(title = "Crowding Plot Error"))
     })
   })
 
