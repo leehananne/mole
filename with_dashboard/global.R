@@ -101,8 +101,6 @@ if (file.exists("data/data_master.csv")) {
   station_master_data <<- data.frame(StationName = character(), NaptanCode = character(), stringsAsFactors = FALSE)
 }
 
-source("R/station_crowd.R")
-source("R/weather_helpers.R")
 source("R/journey_routing.R")
 source("components/6-station-crowd-plot.R")
 source("components/5-journey-output.R")
