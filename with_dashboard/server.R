@@ -242,6 +242,38 @@ server <- function(input, output, session) {
   # JOURNEY TAB CROWDING PLOTS (Origin and Destination)
   # ==============================================================================
   
+  # Origin station crowding title
+  output$origin_crowding_title <- renderUI({
+    origin_naptan <- input$origin_station
+    if (is.null(origin_naptan) || length(origin_naptan) == 0 || origin_naptan == "") {
+      return(h5("Crowding at Origin Station"))
+    }
+    
+    origin_naptan <- as.character(origin_naptan)[1]
+    # Look up station name from naptan code
+    station_name <- names(station_choices[station_choices == origin_naptan])[1]
+    if (is.null(station_name) || is.na(station_name) || station_name == "") {
+      station_name <- "Origin Station"
+    }
+    return(h5(paste("Crowding at", station_name)))
+  })
+  
+  # Destination station crowding title
+  output$destination_crowding_title <- renderUI({
+    dest_naptan <- input$destination_station
+    if (is.null(dest_naptan) || length(dest_naptan) == 0 || dest_naptan == "") {
+      return(h5("Crowding at Destination Station"))
+    }
+    
+    dest_naptan <- as.character(dest_naptan)[1]
+    # Look up station name from naptan code
+    station_name <- names(station_choices[station_choices == dest_naptan])[1]
+    if (is.null(station_name) || is.na(station_name) || station_name == "") {
+      station_name <- "Destination Station"
+    }
+    return(h5(paste("Crowding at", station_name)))
+  })
+  
   # Origin station crowding plot
   output$origin_crowding_plot <- renderPlot({
     # Force reactive dependency
@@ -317,6 +349,21 @@ server <- function(input, output, session) {
   # ==============================================================================
   # BOTTOM OVERLAY CROWDING PLOT (for Stations tab)
   # ==============================================================================
+  
+  # Station crowding title (for Stations tab)
+  output$station_crowding_title <- renderUI({
+    station_name <- input$station_selector
+    if (is.null(station_name) || length(station_name) == 0 || station_name == "") {
+      return(h5("Crowding Levels"))
+    }
+    
+    station_name <- as.character(station_name)[1]
+    if (is.na(station_name) || station_name == "") {
+      return(h5("Crowding Levels"))
+    }
+    return(h5(paste("Crowding at", station_name)))
+  })
+  
   output$crowding_plot <- renderPlot({
     # Force reactive dependencies
     input$station_selector

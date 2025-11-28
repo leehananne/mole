@@ -110,7 +110,7 @@ component_bottom_overlay <- function() {
             condition = "input.left_tabs == 'Stations'",
             fluidRow(
               column(6, 
-                     h5("Crowding Levels"),
+                     uiOutput("station_crowding_title"),
                      plotOutput("crowding_plot", height = "350px", width = "100%")
               ),
               column(6, 
@@ -124,11 +124,11 @@ component_bottom_overlay <- function() {
             condition = "input.left_tabs == 'Journey'",
             fluidRow(
               column(6, 
-                     h5("Origin Station Crowding"),
+                     uiOutput("origin_crowding_title"),
                      plotOutput("origin_crowding_plot", height = "350px", width = "100%")
               ),
               column(6, 
-                     h5("Destination Station Crowding"),
+                     uiOutput("destination_crowding_title"),
                      plotOutput("destination_crowding_plot", height = "350px", width = "100%")
               )
             )

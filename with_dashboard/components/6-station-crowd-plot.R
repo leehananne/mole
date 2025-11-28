@@ -103,7 +103,6 @@ plot_crowd <- function(naptan_code) {
     expand_limits(y = c(0, max(100, max(plot_data$percentage) + 10))) +
     
     labs(
-      title = paste("Crowd forecast for", station_name),
       x = NULL,
       y = NULL
     ) +
