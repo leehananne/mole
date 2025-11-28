@@ -53,9 +53,9 @@ plot_crowd <- function(naptan_code) {
   crowding_data$id <- 1:nrow(crowding_data)
   crowding_data$label_time <- sub("-.*", "", crowding_data$timeBand)
   
-  # Window Logic: +/- 4 hours (16 slots each way)
-  window_start <- max(1, current_idx - 16)
-  window_end <- min(nrow(crowding_data), current_idx + 16)
+  # Window Logic: +/- 3 hours (16 slots each way)
+  window_start <- max(1, current_idx - 12)
+  window_end <- min(nrow(crowding_data), current_idx + 12)
   plot_data <- crowding_data[window_start:window_end, ]
   
   # Recalculate id for the filtered data (1 to nrow(plot_data))
