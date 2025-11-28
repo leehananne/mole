@@ -1,4 +1,13 @@
 plot_crowd <- function(naptan_code) {
+  # Validate input
+  if (is.null(naptan_code) || length(naptan_code) == 0 || naptan_code == "") {
+    stop("Naptan code is required but was not provided.")
+  }
+  naptan_code <- as.character(naptan_code)
+  if (!is.character(naptan_code) || nchar(naptan_code) == 0) {
+    stop("Naptan code must be a non-empty character string.")
+  }
+  
   # --- 1. Setup Time ---
   now <- as.POSIXct(Sys.time())
   current_day_abbr <- format(now, "%a")
@@ -11,6 +20,7 @@ plot_crowd <- function(naptan_code) {
 
   message("Looking for data for: ", current_day_abbr)
   message("Current Time Slot Index: ", current_slot_index, " (approx ", format(now, "%H:%M"), ")")
+  message("Using Naptan code: ", naptan_code)
 
   # --- 2. Call API ---
   base_url <- paste0("https://api.tfl.gov.uk/crowding/", naptan_code, "/", current_day_abbr)
@@ -54,7 +64,7 @@ plot_crowd <- function(naptan_code) {
       panel.grid.major.x = element_blank()
     )
 
-  print(p)
+  return(p)
 }
 
 

@@ -66,6 +66,12 @@ server <- function(input, output, session) {
   output$journeyRouteOutput <- renderUI({
     message("\n>>> Rendering journey route output <<<")
     
+    # Force dependency on the button click AND the station inputs
+    # This ensures re-rendering even if the reactive returns cached data
+    input$plan_journey  # Force dependency on button
+    input$origin_station  # Force dependency on origin
+    input$destination_station  # Force dependency on destination
+    
     # Clear any previous output - start fresh
     journey_result <- journey_route_data()
     
@@ -81,17 +87,50 @@ server <- function(input, output, session) {
     dest_name <- journey_result$dest_name
     
     tryCatch({
+      # Clear any previous state variables
+      journey_details <- NULL
+      journey_data_formatted <- NULL
+      
       # Get journey details for the first journey
+      message("  Step 1: Extracting journey details...")
       journey_details <- extract_journey_details(parsed_data, journey_index = 1)
       
+      # Validate journey_details before proceeding
+      if (is.null(journey_details) || !is.data.frame(journey_details) || nrow(journey_details) == 0) {
+        stop("Invalid journey details: empty or null data frame")
+      }
+      message("  Step 1 complete: Journey details extracted, ", nrow(journey_details), " rows")
+      
       # Transform journey_details to format expected by generate_journey_html()
-      journey_data_formatted <- transform_journey_details(journey_details)
+      message("  Step 2: Transforming journey details...")
+      journey_data_formatted <- tryCatch({
+        transform_journey_details(journey_details)
+      }, error = function(e) {
+        message("  ERROR in transform_journey_details: ", e$message)
+        stop(paste("Transform error:", e$message))
+      })
+      
+      # Validate transformed data
+      if (is.null(journey_data_formatted) || !is.data.frame(journey_data_formatted) || nrow(journey_data_formatted) == 0) {
+        stop("Invalid transformed journey data: empty or null data frame")
+      }
+      message("  Step 2 complete: Data transformed, ", nrow(journey_data_formatted), " rows")
       
       # Generate HTML using the component function (clears its own state internally)
-      journey_html <- generate_journey_html(journey_data_formatted)
+      message("  Step 3: Generating HTML...")
+      journey_html <- tryCatch({
+        generate_journey_html(journey_data_formatted)
+      }, error = function(e) {
+        message("  ERROR in generate_journey_html: ", e$message)
+        stop(paste("HTML generation error:", e$message))
+      })
+      message("  Step 3 complete: HTML generated")
       
       # Add journey summary header
       num_legs <- attr(journey_details, "num_legs")
+      if (is.null(num_legs)) {
+        num_legs <- nrow(journey_details)
+      }
       total_duration <- sum(journey_details$duration, na.rm = TRUE)
       
       summary_header <- div(
@@ -102,11 +141,13 @@ server <- function(input, output, session) {
       )
       
       message("  Output formatted successfully")
+      message("  Number of legs: ", num_legs)
       message(">>> Rendering complete <<<\n")
       return(tagList(summary_header, journey_html))
       
     }, error = function(e) {
       message("  Error extracting journey details: ", e$message)
+      message("  Error traceback: ", paste(capture.output(traceback()), collapse = "\n"))
       return(div(class = "journey-container", 
                  p(style = "color: red;", paste("Error processing journey route:", e$message))))
     })
@@ -201,26 +242,100 @@ server <- function(input, output, session) {
   # BOTTOM OVERLAY CROWDING PLOT
   # ==============================================================================
   output$crowding_plot <- renderPlot({
+    # Force reactive dependencies
+    input$station_selector
+    input$destination_station
+    input$left_tabs
+    
     # Choose which station to use based on the active left-hand tab
     active_tab <- input$left_tabs %||% "Stations"
+    
+    message("\n>>> Crowding Plot Render <<<")
+    message("Active tab: ", active_tab)
     
     naptan <- NULL
     
     if (active_tab == "Stations") {
-      # From the station search tab (autocomplete)
-      naptan <- input$station_selector
+      # From the station search tab (autocomplete) - returns station NAME, need to convert to naptan
+      station_name <- input$station_selector
+      message("Station name from selector: '", station_name, "'")
+      
+      if (!is.null(station_name) && station_name != "") {
+        # Try station_master_data first (from CSV)
+        if (exists("station_master_data") && is.data.frame(station_master_data) && nrow(station_master_data) > 0) {
+          message("Looking up naptan in station_master_data (CSV) for station: '", station_name, "'")
+          message("station_master_data has ", nrow(station_master_data), " rows")
+          
+          # Trim whitespace and try exact match first
+          station_name_trimmed <- trimws(station_name)
+          station_match <- station_master_data %>% 
+            filter(trimws(StationName) == station_name_trimmed) %>% 
+            pull(NaptanCode)
+          
+          # If no exact match, try case-insensitive
+          if (length(station_match) == 0) {
+            message("No exact match, trying case-insensitive...")
+            station_match <- station_master_data %>% 
+              filter(tolower(trimws(StationName)) == tolower(station_name_trimmed)) %>% 
+              pull(NaptanCode)
+          }
+          
+          message("Found ", length(station_match), " matches")
+          if (length(station_match) > 0) {
+            message("First match naptan: ", station_match[1])
+          }
+          
+          if (length(station_match) > 0 && !is.na(station_match[1]) && station_match[1] != "") {
+            naptan <- as.character(station_match[1])
+            message("Using naptan: ", naptan)
+          } else {
+            message("No valid naptan found in CSV for station: '", station_name, "'")
+            # Show available stations for debugging
+            message("Available stations (first 5): ", paste(head(station_master_data$StationName, 5), collapse = ", "))
+          }
+        } else {
+          message("station_master_data not available or empty")
+        }
+      } else {
+        message("Station name is NULL or empty")
+      }
     } else if (active_tab == "Journey") {
-      # From the journey tab (destination station)
-      naptan <- input$destination_station
+      # From the journey tab (destination station) - already a naptan code
+      dest_naptan <- input$destination_station
+      message("Destination naptan from journey tab: ", dest_naptan)
+      if (!is.null(dest_naptan) && dest_naptan != "") {
+        naptan <- as.character(dest_naptan)
+        message("Using naptan: ", naptan)
+      }
     } else {
       # Fallback: use the manual Naptan from the Crowding tab if available
-      naptan <- tryCatch(crowd_naptan_reactive(), error = function(e) NULL)
+      naptan <- tryCatch({
+        n <- crowd_naptan_reactive()
+        if (!is.null(n) && n != "") as.character(n) else NULL
+      }, error = function(e) NULL)
     }
     
+    message("Final naptan value: ", if(is.null(naptan)) "NULL" else naptan)
+    
     validate(
-      need(!is.null(naptan) && naptan != "", "Select a station (or enter a Naptan code) to see crowding levels.")
+      need(!is.null(naptan) && naptan != "" && is.character(naptan), 
+           "Select a station (or enter a Naptan code) to see crowding levels.")
     )
-    plot_crowd(naptan)
+    
+    message("Calling plot_crowd with naptan: ", naptan)
+    
+    # Wrap plot_crowd in tryCatch to handle errors gracefully
+    tryCatch({
+      p <- plot_crowd(naptan)
+      message("Plot generated successfully")
+      return(p)
+    }, error = function(e) {
+      message("ERROR in plot_crowd: ", e$message)
+      # Return an empty plot with error message
+      return(ggplot() + 
+             annotate("text", x = 0.5, y = 0.5, label = paste("Error:", e$message), size = 4) +
+             theme_void())
+    })
   })
 
 }

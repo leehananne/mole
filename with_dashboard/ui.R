@@ -2,6 +2,7 @@ library(shiny)
 source("components/4-station-autofill.R")
 source("components/4-map-ui.R")
 source("components/5-journey-output.R")
+source("components/6-station-crowd-plot.R")
 
 # --- Component Functions (UI Blocks) ---
 
@@ -16,7 +17,14 @@ component_station_search <- function() {
     #             width = "100%",
     #             multiple = FALSE),
     
-    station_search_ui("station_selector", station_table_data$StationName),
+    station_search_ui("station_selector", 
+                     if(exists("station_master_data") && is.data.frame(station_master_data) && nrow(station_master_data) > 0) {
+                       station_master_data$StationName
+                     } else if(exists("station_table_data") && is.data.frame(station_table_data) && nrow(station_table_data) > 0) {
+                       station_table_data$StationName
+                     } else {
+                       character(0)
+                     }),
     hr(),
     
     # ii. Relevant station information block (TfL API placeholder)

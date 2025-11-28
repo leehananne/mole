@@ -91,6 +91,16 @@ if (length(station_choices) > 1 && !(names(station_choices)[1] %in% c("Loading E
   default_destination_naptan_code <- ""
 }
 
+# Load master station data from CSV
+if (file.exists("data/data_master.csv")) {
+  station_master_data <<- read.csv("data/data_master.csv", stringsAsFactors = FALSE)
+  message("Loaded ", nrow(station_master_data), " stations from data_master.csv")
+  message("Sample station names: ", paste(head(station_master_data$StationName, 3), collapse = ", "))
+} else {
+  warning("data/data_master.csv not found. Using API data only.")
+  station_master_data <<- data.frame(StationName = character(), NaptanCode = character(), stringsAsFactors = FALSE)
+}
+
 source("R/station_crowd.R")
 source("R/weather_helpers.R")
 source("R/journey_routing.R")
