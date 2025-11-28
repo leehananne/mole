@@ -105,16 +105,32 @@ component_bottom_overlay <- function() {
           actionButton("toggle_box", label = NULL, icon = icon("chevron-down"), class = "btn-xs")
       ),
       div(class = "box-content",
-          fluidRow(
-            column(6, 
-                   h5("Crowding Levels"),
-                   # Crowding API visualization
-                   plotOutput("crowding_plot", height = "350px", width = "100%")
-            ),
-            column(6, 
-                   h5("Local Weather"),
-                   # Placeholder for Weather API
-                   uiOutput("weather_widget")
+          # Main crowding plot (for Stations tab)
+          conditionalPanel(
+            condition = "input.left_tabs == 'Stations'",
+            fluidRow(
+              column(6, 
+                     h5("Crowding Levels"),
+                     plotOutput("crowding_plot", height = "350px", width = "100%")
+              ),
+              column(6, 
+                     h5("Local Weather"),
+                     uiOutput("weather_widget")
+              )
+            )
+          ),
+          # Journey tab: Origin and Destination crowding plots
+          conditionalPanel(
+            condition = "input.left_tabs == 'Journey'",
+            fluidRow(
+              column(6, 
+                     h5("Origin Station Crowding"),
+                     plotOutput("origin_crowding_plot", height = "350px", width = "100%")
+              ),
+              column(6, 
+                     h5("Destination Station Crowding"),
+                     plotOutput("destination_crowding_plot", height = "350px", width = "100%")
+              )
             )
           )
       )

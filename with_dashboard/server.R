@@ -239,7 +239,83 @@ server <- function(input, output, session) {
   })
 
   # ==============================================================================
-  # BOTTOM OVERLAY CROWDING PLOT
+  # JOURNEY TAB CROWDING PLOTS (Origin and Destination)
+  # ==============================================================================
+  
+  # Origin station crowding plot
+  output$origin_crowding_plot <- renderPlot({
+    # Force reactive dependency
+    input$origin_station
+    
+    origin_naptan <- input$origin_station
+    
+    if (is.null(origin_naptan) || length(origin_naptan) == 0 || origin_naptan == "") {
+      return(ggplot() + 
+             annotate("text", x = 0.5, y = 0.5, 
+                     label = "Select origin station", 
+                     size = 4, hjust = 0.5, vjust = 0.5) +
+             theme_void())
+    }
+    
+    origin_naptan <- as.character(origin_naptan)[1]
+    if (is.na(origin_naptan) || origin_naptan == "") {
+      return(ggplot() + 
+             annotate("text", x = 0.5, y = 0.5, 
+                     label = "Select origin station", 
+                     size = 4, hjust = 0.5, vjust = 0.5) +
+             theme_void())
+    }
+    
+    tryCatch({
+      p <- plot_crowd(origin_naptan)
+      return(p)
+    }, error = function(e) {
+      return(ggplot() + 
+             annotate("text", x = 0.5, y = 0.5, 
+                     label = paste("Error:\n", e$message), 
+                     size = 3, hjust = 0.5, vjust = 0.5) +
+             theme_void())
+    })
+  })
+  
+  # Destination station crowding plot
+  output$destination_crowding_plot <- renderPlot({
+    # Force reactive dependency
+    input$destination_station
+    
+    dest_naptan <- input$destination_station
+    
+    if (is.null(dest_naptan) || length(dest_naptan) == 0 || dest_naptan == "") {
+      return(ggplot() + 
+             annotate("text", x = 0.5, y = 0.5, 
+                     label = "Select destination station", 
+                     size = 4, hjust = 0.5, vjust = 0.5) +
+             theme_void())
+    }
+    
+    dest_naptan <- as.character(dest_naptan)[1]
+    if (is.na(dest_naptan) || dest_naptan == "") {
+      return(ggplot() + 
+             annotate("text", x = 0.5, y = 0.5, 
+                     label = "Select destination station", 
+                     size = 4, hjust = 0.5, vjust = 0.5) +
+             theme_void())
+    }
+    
+    tryCatch({
+      p <- plot_crowd(dest_naptan)
+      return(p)
+    }, error = function(e) {
+      return(ggplot() + 
+             annotate("text", x = 0.5, y = 0.5, 
+                     label = paste("Error:\n", e$message), 
+                     size = 3, hjust = 0.5, vjust = 0.5) +
+             theme_void())
+    })
+  })
+  
+  # ==============================================================================
+  # BOTTOM OVERLAY CROWDING PLOT (for Stations tab)
   # ==============================================================================
   output$crowding_plot <- renderPlot({
     # Force reactive dependencies
