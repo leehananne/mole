@@ -5,8 +5,15 @@ separate_leg_chunks <- function(legs_list) {
     return(list())
   }
   
+  # Check if legs_list itself is already a leg object (single leg case)
+  if (!is.null(names(legs_list)) && 
+      ("departureTime" %in% names(legs_list) || "$type" %in% names(legs_list))) {
+    # This is a single leg object - wrap it in a list
+    return(list(legs_list))
+  }
+  
   # Check if this is already a list of leg objects (properly structured)
-  if (is.list(legs_list[[1]]) && length(legs_list[[1]]) > 0 && 
+  if (length(legs_list) > 0 && is.list(legs_list[[1]]) && length(legs_list[[1]]) > 0 && 
       !is.null(names(legs_list[[1]])) && 
       ("departureTime" %in% names(legs_list[[1]]) || "$type" %in% names(legs_list[[1]]))) {
     # Already separated into leg objects - return as is
@@ -141,24 +148,66 @@ extract_journey_details <- function(parsed_data, journey_index = 1) {
       stop("journey_index exceeds number of journeys")
     }
     journey <- journeys[journey_index, ]
-    legs <- journey$legs[[1]]
-      } else if (is.list(journeys)) {
+    if (is.null(journey$legs)) {
+      stop("journey$legs is NULL")
+    }
+    # For data.frame, legs might be stored as a list column
+    if (is.list(journey$legs) && length(journey$legs) > 0) {
+      legs <- journey$legs[[1]]
+    } else {
+      legs <- journey$legs
+    }
+  } else if (is.list(journeys)) {
     if (journey_index > length(journeys)) {
       stop("journey_index exceeds number of journeys")
     }
     journey <- journeys[[journey_index]]
+    if (is.null(journey$legs)) {
+      stop("journey$legs is NULL")
+    }
     legs <- journey$legs
   } else {
     stop("Unexpected journeys structure")
   }
   
+  # Safety check: ensure legs is valid
+  if (is.null(legs)) {
+    stop("legs is NULL after extraction")
+  }
+  
   # Separate into leg chunks if needed
   legs_separated <- separate_leg_chunks(legs)
+  
+  # Safety check: ensure legs_separated is a list
+  if (!is.list(legs_separated)) {
+    stop("legs_separated is not a list")
+  }
+  
   num_legs <- length(legs_separated)
+  
+  # Safety check: ensure we have at least one leg
+  if (num_legs == 0) {
+    stop("No legs found in journey")
+  }
+  
+  # Safety check: ensure we can access the first leg
+  if (is.null(legs_separated[[1]])) {
+    stop("Cannot access first leg in legs_separated")
+  }
   
   # Extract information for each leg
   leg_details <- lapply(seq_along(legs_separated), function(n) {
+    # Safety check: ensure index is valid
+    if (n < 1 || n > num_legs) {
+      stop(paste("Invalid leg index:", n, "out of", num_legs))
+    }
+    
     leg <- legs_separated[[n]]
+    
+    # Safety check: ensure leg is valid
+    if (is.null(leg) || !is.list(leg)) {
+      stop(paste("Invalid leg structure at index", n))
+    }
     
     # Extract fields with safe access (handles NULLs)
     instruction_detailed <- if (!is.null(leg$instruction) && !is.null(leg$instruction$detailed)) {
@@ -222,6 +271,10 @@ extract_journey_details <- function(parsed_data, journey_index = 1) {
   })
   
   # Convert to data frame
+  if (length(leg_details) == 0) {
+    stop("No leg details to convert to data frame")
+  }
+  
   result <- do.call(rbind, lapply(leg_details, function(x) {
     data.frame(
       leg_number = x$leg_number,
@@ -235,6 +288,11 @@ extract_journey_details <- function(parsed_data, journey_index = 1) {
       stringsAsFactors = FALSE
     )
   }))
+  
+  # Safety check: ensure result is a valid data frame
+  if (is.null(result) || !is.data.frame(result) || nrow(result) == 0) {
+    stop("Failed to create valid journey details data frame")
+  }
   
   # Add summary information
   attr(result, "num_legs") <- num_legs
