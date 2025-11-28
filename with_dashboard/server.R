@@ -317,12 +317,28 @@ server <- function(input, output, session) {
     
     message("Final naptan value: ", if(is.null(naptan)) "NULL" else naptan)
     
-    validate(
-      need(!is.null(naptan) && naptan != "" && is.character(naptan), 
-           "Select a station (or enter a Naptan code) to see crowding levels.")
-    )
+    # Convert to character and validate before using validate()
+    if (is.null(naptan) || length(naptan) == 0) {
+      naptan <- NULL
+    } else {
+      naptan <- as.character(naptan)[1]  # Take first element and convert to character
+      if (is.na(naptan) || naptan == "") {
+        naptan <- NULL
+      }
+    }
+    
+    # Now validate with a simple check
+    if (is.null(naptan) || naptan == "") {
+      return(ggplot() + 
+             annotate("text", x = 0.5, y = 0.5, 
+                     label = "Please select a station to see crowding levels.", 
+                     size = 4, hjust = 0.5, vjust = 0.5) +
+             theme_void())
+    }
     
     message("Calling plot_crowd with naptan: ", naptan)
+    message("  naptan class: ", class(naptan))
+    message("  naptan is.character: ", is.character(naptan))
     
     # Wrap plot_crowd in tryCatch to handle errors gracefully
     tryCatch({

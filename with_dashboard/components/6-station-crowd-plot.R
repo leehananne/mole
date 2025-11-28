@@ -15,7 +15,14 @@ get_station_name <- function(naptan_code) {
 
 plot_crowd <- function(naptan_code) {
   
-  if (is.null(naptan_code) || naptan_code == "") stop("Naptan code is required.")
+  # Ensure naptan_code is a character string
+  if (is.null(naptan_code) || length(naptan_code) == 0) {
+    stop("Naptan code is required.")
+  }
+  naptan_code <- as.character(naptan_code)[1]  # Convert to character and take first element
+  if (is.na(naptan_code) || naptan_code == "") {
+    stop("Naptan code is required.")
+  }
   
   # --- 1. Time Setup ---
   now <- as.POSIXct(Sys.time())
@@ -51,6 +58,12 @@ plot_crowd <- function(naptan_code) {
   window_end <- min(nrow(crowding_data), current_idx + 16)
   plot_data <- crowding_data[window_start:window_end, ]
   
+  # Recalculate id for the filtered data (1 to nrow(plot_data))
+  plot_data$id <- 1:nrow(plot_data)
+  
+  # Calculate current_idx relative to the filtered window
+  current_idx_relative <- current_idx - window_start + 1
+  
   # Filter x-axis labels to only show hours (e.g. 17:00)
   breaks_subset <- plot_data[grepl(":00$", plot_data$label_time), ]
   
@@ -63,8 +76,8 @@ plot_crowd <- function(naptan_code) {
     annotate("rect", xmin = -Inf, xmax = Inf, ymin = 50, ymax = 100, alpha = 0.05, fill = "yellow") +
     
     # --- Context Labels (Text inside the graph) ---
-    annotate("text", x = window_start, y = 15, label = " Quiet", hjust = 0, vjust = 0, color = "darkgreen", size = 4, fontface = "italic") +
-    annotate("text", x = window_start, y = 65, label = " Busy", hjust = 0, vjust = 0, color = "orange", size = 4, fontface = "italic") +
+    annotate("text", x = 1, y = 15, label = " Quiet", hjust = 0, vjust = 0, color = "darkgreen", size = 4, fontface = "italic") +
+    annotate("text", x = 1, y = 65, label = " Busy", hjust = 0, vjust = 0, color = "orange", size = 4, fontface = "italic") +
     
     # The Line
     geom_line(color = "grey60", linewidth = 1) +
@@ -72,9 +85,9 @@ plot_crowd <- function(naptan_code) {
     # The Gradient Points
     geom_point(aes(color = percentage), size = 3.5) +
     
-    # Current Time Marker
-    geom_vline(xintercept = current_idx, linetype = "dotted", color = "black", linewidth = 0.8) +
-    annotate("label", x = current_idx, y = max(plot_data$percentage) + 5, 
+    # Current Time Marker (using relative index)
+    geom_vline(xintercept = current_idx_relative, linetype = "dotted", color = "black", linewidth = 0.8) +
+    annotate("label", x = current_idx_relative, y = max(plot_data$percentage) + 5, 
              label = "NOW", size = 5, fontface = "bold", fill = "white", label.size = 0) +
     
     # Scales

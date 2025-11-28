@@ -108,8 +108,8 @@ component_bottom_overlay <- function() {
           fluidRow(
             column(6, 
                    h5("Crowding Levels"),
-                   # Placeholder for Crowding API visualization
-                   plotOutput("crowding_plot", height = "300px", width = "100%")
+                   # Crowding API visualization
+                   plotOutput("crowding_plot", height = "350px", width = "100%")
             ),
             column(6, 
                    h5("Local Weather"),
