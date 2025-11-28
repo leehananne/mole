@@ -134,8 +134,7 @@ server <- function(input, output, session) {
       total_duration <- sum(journey_details$duration, na.rm = TRUE)
       
       summary_header <- div(
-        style = "margin-bottom: 15px; padding: 10px; background-color: #f8f9fa; border-radius: 5px;",
-        h5(style = "margin-top: 0;", paste("Journey: ", origin_name, " → ", dest_name)),
+        style = "margin-bottom: 15px; background-color: #f8f9fa; border-radius: 5px;",
         p(style = "margin-bottom: 0; font-size: 12px; color: #666;",
           paste("Total Duration: ", total_duration, " minutes | ", "Number of Legs: ", num_legs))
       )
@@ -153,74 +152,74 @@ server <- function(input, output, session) {
     })
   })
   
-  # ==============================================================================
-  # LEGACY CODE (from refactor version - kept for reference, may not be used)
-  # ==============================================================================
+  # # ==============================================================================
+  # # LEGACY CODE (from refactor version - kept for reference, may not be used)
+  # # ==============================================================================
   
-  selected_station_info <- reactive({
-    req(input$selected_station_naptan)
-    if (!exists("master_tube_locations") || !is.data.frame(master_tube_locations) || nrow(master_tube_locations) == 0) {
-      return(data.frame())
-    }
-    master_tube_locations %>% dplyr::filter(NaptanCode == input$selected_station_naptan)
-  })
+  # selected_station_info <- reactive({
+  #   req(input$selected_station_naptan)
+  #   if (!exists("master_tube_locations") || !is.data.frame(master_tube_locations) || nrow(master_tube_locations) == 0) {
+  #     return(data.frame())
+  #   }
+  #   master_tube_locations %>% dplyr::filter(NaptanCode == input$selected_station_naptan)
+  # })
 
-  origin_station_info <- reactive({
-    req(input$origin_station)
-    if (!exists("master_tube_locations") || !is.data.frame(master_tube_locations) || nrow(master_tube_locations) == 0) {
-      return(data.frame())
-    }
-    master_tube_locations %>% dplyr::filter(NaptanCode == input$origin_station)
-  })
+  # origin_station_info <- reactive({
+  #   req(input$origin_station)
+  #   if (!exists("master_tube_locations") || !is.data.frame(master_tube_locations) || nrow(master_tube_locations) == 0) {
+  #     return(data.frame())
+  #   }
+  #   master_tube_locations %>% dplyr::filter(NaptanCode == input$origin_station)
+  # })
 
-  output$weatherTitle <- renderText({
-    info <- origin_station_info()
-    if (is.null(info) || nrow(info) == 0) {
-      return("Waiting for origin station selection...")
-    }
-    if (is.na(info$StationName[1]) || info$StationName[1] == "") {
-      return("Station name missing.")
-    }
-    paste("Current Weather near", info$StationName[1])
-  })
+  # output$weatherTitle <- renderText({
+  #   info <- origin_station_info()
+  #   if (is.null(info) || nrow(info) == 0) {
+  #     return("Waiting for origin station selection...")
+  #   }
+  #   if (is.na(info$StationName[1]) || info$StationName[1] == "") {
+  #     return("Station name missing.")
+  #   }
+  #   paste("Current Weather near", info$StationName[1])
+  # })
 
-  autoInvalidate <- reactiveTimer(intervalMs = 1000 * 60 * 15)
+  # autoInvalidate <- reactiveTimer(intervalMs = 1000 * 60 * 15)
 
-  weather_api_data <- reactive({
-    autoInvalidate()
-    info <- origin_station_info()
-    if (is.null(info) || nrow(info) == 0) return(NULL)
-    if (is.na(info$Latitude) || is.na(info$Longitude)) return(NULL)
-    fetch_weather_data(google_maps_api, info$Latitude[1], info$Longitude[1], info$StationName[1])
-  })
+  # weather_api_data <- reactive({
+  #   autoInvalidate()
+  #   info <- origin_station_info()
+  #   if (is.null(info) || nrow(info) == 0) return(NULL)
+  #   if (is.na(info$Latitude) || is.na(info$Longitude)) return(NULL)
+  #   fetch_weather_data(google_maps_api, info$Latitude[1], info$Longitude[1], info$StationName[1])
+  # })
 
-  output$weatherStatement <- renderText({
-    data_list <- weather_api_data()
-    if (is.null(data_list) || !is.list(data_list)) {
-      return("Waiting for weather data or API call failed...")
-    }
-    df <- tryCatch(as.data.frame(data_list), error = function(e) NULL)
-    if (is.null(df)) {
-      return("Error processing weather data structure.")
-    }
-    station_name <- df[["SelectedStationName"]][1] %||% "Selected Location"
-    temp <- df[["temperature.degrees"]][1] %||% NA_real_
-    condition <- df[["weatherCondition.description.text"]][1] %||% "N/A"
-    feels_like <- df[["feelsLikeTemperature.degrees"]][1] %||% NA_real_
-    humidity <- df[["relativeHumidity"]][1] %||% NA_integer_
-    heat_index <- df[["heatIndex.degrees"]][1] %||% NA_real_
-    lines <- list()
-    lines$line1 <- paste("Weather at ", station_name, ":")
-    lines$line2 <- "--------------------------"
-    lines$line3 <- paste(" Condition: ", condition)
-    lines$line4 <- paste(" Temp:      ", ifelse(is.na(temp), "N/A", paste0(round(temp, 1), "°C")))
-    lines$line5 <- paste(" Feels Like:", ifelse(is.na(feels_like), "N/A", paste0(round(feels_like, 1), "°C")))
-    lines$line6 <- paste(" Humidity:  ", ifelse(is.na(humidity), "N/A", paste0(humidity, "%")))
-    lines$line7 <- paste(" Heat Index:", ifelse(is.na(heat_index), "N/A", paste0(round(heat_index, 1), "°C")))
-    statement <- paste(lines, collapse = "\n")
-    if (!is.character(statement)) { statement <- "Error formatting weather statement." }
-    return(statement)
-  })
+  # output$weatherStatement <- renderText({
+  #   data_list <- weather_api_data()
+  #   if (is.null(data_list) || !is.list(data_list)) {
+  #     return("Waiting for weather data or API call failed...")
+  #   }
+  #   df <- tryCatch(as.data.frame(data_list), error = function(e) NULL)
+  #   if (is.null(df)) {
+  #     return("Error processing weather data structure.")
+  #   }
+  #   station_name <- df[["SelectedStationName"]][1] %||% "Selected Location"
+  #   temp <- df[["temperature.degrees"]][1] %||% NA_real_
+  #   condition <- df[["weatherCondition.description.text"]][1] %||% "N/A"
+  #   feels_like <- df[["feelsLikeTemperature.degrees"]][1] %||% NA_real_
+  #   humidity <- df[["relativeHumidity"]][1] %||% NA_integer_
+  #   heat_index <- df[["heatIndex.degrees"]][1] %||% NA_real_
+  #   lines <- list()
+  #   lines$line1 <- paste("Weather at ", station_name, ":")
+  #   lines$line2 <- "--------------------------"
+  #   lines$line3 <- paste(" Condition: ", condition)
+  #   lines$line4 <- paste(" Temp:      ", ifelse(is.na(temp), "N/A", paste0(round(temp, 1), "°C")))
+  #   lines$line5 <- paste(" Feels Like:", ifelse(is.na(feels_like), "N/A", paste0(round(feels_like, 1), "°C")))
+  #   lines$line6 <- paste(" Humidity:  ", ifelse(is.na(humidity), "N/A", paste0(humidity, "%")))
+  #   lines$line7 <- paste(" Heat Index:", ifelse(is.na(heat_index), "N/A", paste0(round(heat_index, 1), "°C")))
+  #   statement <- paste(lines, collapse = "\n")
+  #   if (!is.character(statement)) { statement <- "Error formatting weather statement." }
+  #   return(statement)
+  # })
 
   # ==============================================================================
   # STATION CROWDING TAB
