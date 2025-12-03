@@ -6,15 +6,14 @@
 # Crowd Forecast: 24 data points (15-min intervals for 6 hours)
 # Value 0 (Empty) to 1 (Full capacity)
 
-source("components/station_crowd_forecast.R")
-source("components/weather_forecast.R")
-station_data <- read.csv("data/data_master.csv")
+source("./station_nextday.R")
+source("./weather_forecast.R")
+station_data <- read.csv("../data/data_master.csv")
 
 api_key <- "AIzaSyCkp9eNSjWSoLJ_s0NX61yg21lcwCAaD8Q"
-n_scope <- 6
+n_scope <- 8
 
-station_data <- read.csv("data/data_master.csv")
-station_name <- "South Kensington Underground Station"
+station_name <- "Earl's Court Underground Station"
 
 station_info <- station_data %>%
   filter(StationName == station_name) %>%
@@ -72,7 +71,7 @@ if (user_profile == "standard") {
 
 # Create the main dataframe
 df <- data.frame(
-  Hour = 1:6,
+  Hour = 1:n_scope,
   Temp = temp_forecast,
   Condition = weather_condition,
   Crowd_Ratio = crowd_hourly_avg,

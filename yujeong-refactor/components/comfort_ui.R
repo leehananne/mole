@@ -1,35 +1,47 @@
-# ERROR PERSISTS!
-
 library(shiny)
 library(DT)
 library(dplyr)
 
-
-# ========================================================
-# 1. SETUP / MOCK DATA (Replace this with your actual loading logic)
-# ========================================================
-
-source("components/comfort_index.R")
+source("./comfort_index.R")
 
 # ========================================================
 # 2. SHINY UI
 # ========================================================
 
 ui <- fluidPage(
-  theme = bslib::bs_theme(version = 5), # Optional: Modern Bootstrap 5 theme
+  theme = bslib::bs_theme(version = 5, bootswatch = "minty"),
+  
+  # Custom CSS to improve table spacing and alignment
+  tags$head(
+    tags$style(HTML("
+      .table > tbody > tr > td {
+        vertical-align: middle;
+        font-size: 16px;
+      }
+      .metric-label {
+        font-weight: bold;
+        color: #555;
+        text-align: right; 
+        background-color: #f8f9fa;
+      }
+    "))
+  ),
   
   titlePanel("Station Comfort Forecast"),
   
   sidebarLayout(
     sidebarPanel(
       h4("Station Status"),
-      p("Forecast for the next 6 hours based on crowding, weather, and accessibility."),
+      p("Real-time forecast for South Kensington."),
+      p("This dashboard helps you decide the best time to travel based on comfort, crowding, and weather conditions."),
+      hr(),
+      helpText("Comfort Index ranges from 0 (Bad) to 10 (Excellent)."),
       width = 3
     ),
     
     mainPanel(
-      h3("Hourly Comfort Details"),
-      # The Output element for the table
+      h3("Forecast Summary"),
+      # The Output element for the transposed table
       DTOutput("comfort_table"),
       width = 9
     )
@@ -54,7 +66,7 @@ server <- function(input, output) {
         `Comfort Index` = round(Comfort_Index, 1),
         
         # 3. Format Crowding: Convert ratio (0.1) to percentage (10%)
-        Crowding = paste0(round(Crowd_Ratio * 100, 0), "%"),
+        Crowding = paste0(round(Crowd_Ratio.CrowdingScore * 100, 0), "%"),
         
         # 4. Format Temperature: Add unit
         Temperature = paste0(Temp, "°C"),
@@ -64,7 +76,7 @@ server <- function(input, output) {
         # Weather = paste0('<img src="', ConditionIcon, '" height="35"></img>')
       ) %>%
       # Select and Reorder columns for the final table
-      select(Time, `Comfort Index`, Crowding, Temperature, Weather)
+      select(Time, `Comfort Index`, Crowding, Temperature)
     
     # Render the DataTable
     datatable(
