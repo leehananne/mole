@@ -1,3 +1,5 @@
+YOUR_API_KEY <- "AIzaSyCkp9eNSjWSoLJ_s0NX61yg21lcwCAaD8Q"
+
 fetch_weather_data <- function(api_key, latitude, longitude, station_name = NULL) {
   if (is.null(api_key) || api_key == "" || is.na(latitude) || is.na(longitude)) return(NULL)
   base_url <- "https://weather.googleapis.com/v1/currentConditions:lookup"
@@ -23,4 +25,5 @@ fetch_weather_data <- function(api_key, latitude, longitude, station_name = NULL
   })
 }
 
-
+# test for south kensington station
+fetch_weather_data(YOUR_API_KEY, 51.494094, -0.174138)
