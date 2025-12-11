@@ -1,0 +1,334 @@
+:root {
+--main-radius: 16px;
+}
+
+@font-face {
+font-family: 'Darumadrop';
+font-weight: 400;
+font-style: normal;
+src: url('DarumadropOne-Regular.ttf') format('truetype');
+}
+
+html, body { 
+height: 100%; 
+background-color: #f4f6f9;
+margin: 0;
+}
+
+#dashboard {
+display: flex;
+flex-direction: row;
+gap: 20px;
+padding: 20px 12px;
+}
+
+/* 2. Left Panel: Fixed Position, Fixed Width, Full Height with Gaps */
+.sidebar-fixed {
+position: relative;
+width: 360px;
+min-width: 360px;
+background: white;
+border-radius: 16px;
+box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+padding: 22px;
+overflow-y: auto; /* Internal scroll */
+z-index: 1000;
+display: flex;
+flex-direction: column;
+}
+
+/* 3. Right Panel: Scrollable Main Content */
+.main-content {
+width: 100%;
+min-height: 100vh;
+}
+
+/* 4. Tab Styling (50% width, segmented look) */
+.custom-tabs .nav-pills {
+background-color: #f1f3f5;
+border-radius: 10px;
+padding: 6px;
+width: 100%;
+display: flex;
+}
+
+.custom-tabs .nav-item {
+width: 50%;
+text-align: center;
+}
+
+.custom-tabs .nav-link {
+border-radius: 7px;
+color: #6c757d;
+font-weight: 600;
+width: 100%;
+}
+
+.custom-tabs .nav-link.active {
+background-color: white;
+color: #000;
+box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* 5. Map Styling */
+.map-wrapper {
+width: 100%;
+height: 650px;
+border-radius: 16px;
+overflow: hidden;
+background: #e9ecef;
+margin-bottom: 30px;
+}
+
+#map { height: 100%; width: 100%; }
+
+/* 6. Card/Box Styling */
+.chart-box {
+background: #ffffff; /* Grey background like in image */
+border-radius: 8px;
+padding: 15px;
+height: 100%;
+min-height: 320px;
+}
+.station-info-card {
+/* border: 2px solid #0d6efd; */
+/* border-left: 5px solid #0d6efd; */
+background: #fff;
+}
+.advice-card {
+background-color: #d1e7dd; /* Light green */
+border: none;
+}
+
+/* Header Branding */
+.brand-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-bottom: 20px;
+padding-left: 2px;
+}
+
+.brand-title { 
+font-family: 'Darumadrop', sans-serif;
+font-size: 40px; 
+line-height: 36px;
+margin-bottom: 20px;
+padding-left: 2px;
+}
+
+.brand-sub {
+font-weight: normal; 
+font-size: 14px; 
+color: #666; 
+display: block; 
+line-height: 1.5;
+padding-left: 2px;
+}
+
+
+
+/* Station Card Components */
+
+/* --- Station Card Styles --- */
+.station-card {
+background: #fff;
+border: 1px solid #e3e3e3;
+border-radius: 4px;
+padding: 12px;
+}
+
+.station-card h3 {
+margin-top: 0;
+color: #333;
+font-weight: 600;
+border-bottom: 1px solid #f0f0f0;
+padding-bottom: 10px;
+margin-bottom: 15px;
+}
+
+/* Service Badges */
+.service-badge {
+color: white !important;
+margin-right: 4px;
+padding: 6px 10px;
+font-weight: normal;
+font-size: 0.85rem;
+display: inline-block;
+border-radius: 10px; /* Optional: rounded badges */
+}
+
+/* Facility Grid Rows */
+.facility-row {
+display: flex;
+justify-content: space-between;
+margin-bottom: 8px;
+border-bottom: 1px solid #eee;
+padding-bottom: 5px;
+}
+
+.facility-label {
+font-weight: bold;
+color: #555;
+}
+
+/* Toilet Specific Styles */
+.toilet-container {
+margin-top: 6px;
+}
+
+.toilet-summary {
+cursor: pointer;
+outline: none;
+list-style: none; /* Hides default triangle in some browsers */
+font-weight: bold;
+color: #555;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+
+/* Remove default marker for details */
+.toilet-summary::-webkit-details-marker {
+display: none;
+}
+
+.toilet-summary.disabled {
+pointer-events: none;
+color: #aaa;
+cursor: default;
+}
+
+.toilet-list {
+margin-top: 5px;
+padding: 0; /* Remove padding to be full width */
+overflow: hidden;
+}
+
+.toilet-row {
+display: flex;
+justify-content: space-between;
+align-items: center;
+padding: 10px;
+border-bottom: 1px solid #eee;
+font-size: 0.85rem;
+}
+
+.toilet-row:last-child {
+border-bottom: none;
+}
+
+.toilet-type {
+font-weight: 600;
+color: #333;
+}
+
+.toilet-icons {
+display: flex;
+gap: 10px;
+}
+
+.facility-icon {
+font-size: 1.1em;
+}
+
+.icon-active {
+color: #333;
+opacity: 1;
+}
+
+.icon-inactive {
+color: #ccc;
+opacity: 0.4;
+}
+
+
+/*
+* Modal Block Styling
+*/
+
+/* 1. LAYOUT & MODAL BOX */
+.modal { 
+display: flex !important; 
+align-items: center !important; 
+justify-content: center !important; 
+}
+.modal-content { 
+border-radius: 24px !important; 
+border: none !important; 
+box-shadow: 0 15px 40px rgba(0,0,0,0.25) !important; 
+overflow: hidden; 
+background: #fff;
+}
+.modal-body { padding: 0 !important; }
+
+/* 2. HEADER STYLES */
+.modal-header-custom {
+display: flex; 
+flex-direction: column; 
+align-items: center; 
+padding: 30px 20px 20px 20px;
+background-color: #ffffff; 
+}
+.header-logo { width: 60%; height: auto; margin-bottom: 10px; border-radius: 8px; }
+.header-title { font-family: 'Darumadrop', sans-serif; font-size: 60px; line-height: 48px; color: #493F38; margin: 0; }
+.header-subtitle { font-size: 14px; color: #493F38; font-weight: 500; margin-top: 5px; text-transform: capitalize; }
+
+.card-icon { 
+font-size: 20px; 
+color: #666; 
+margin-right: 15px; 
+width: 30px; 
+text-align: center;
+}
+
+.text-group {
+width: 100% !important; 
+display: flex;
+flex-direction: column;
+}
+
+.text-content {
+flex: 1;
+text-align: left;
+}
+
+.card-title { 
+font-size: 16px; 
+font-weight: 800; 
+color: #333; 
+line-height: 1.2;
+}
+
+.card-desc { 
+font-size: 12px; 
+color: #777; 
+line-height: 1.3; 
+margin-top: 2px;
+}
+
+.radio-input, .icon { flex-shrink: 0 !important; }
+
+/* 4. FOOTER */
+.modal-footer {
+width: 100%;
+padding: 0 30px 15px 30px;
+text-align: center;
+background-color: white;
+}
+
+.btn-start-dashboard {
+background-color: #a7a09b; 
+border: none; 
+border-radius: 12px; 
+padding: 12px 40px;
+font-size: 16px; 
+font-weight: bold; 
+width: 100%; 
+cursor: pointer;
+}
+
+.btn-start-dashboard:hover { 
+background-color: #8e8680 !important;
+transform: translateY(-0.5px); 
+}
