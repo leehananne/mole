@@ -8,6 +8,9 @@
 - Commuters with accessibility needs.
 - Tourists lacking local knowledge of crowding or station facilities.
 
+<img width="2513" height="1505" alt="_final_ui" src="https://github.com/user-attachments/assets/3d74e3d3-986e-4ea6-a6e0-07c096dc10a5" />
+
+
 # 🌟 Key Features
 
 - **Comfort-First Routing:** Prioritizes lower crowding levels over pure speed.
