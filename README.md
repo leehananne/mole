@@ -34,9 +34,9 @@
 You will need R and RStudio installed. 
 
 1. **Clone the repo** 
-
-Download the zip file or clone the repository.
     
+    Download the zip file or clone the repository.
+   
     ```
     git clone https://github.com/leehananne/mole.git
     ```
