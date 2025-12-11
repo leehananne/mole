@@ -399,7 +399,7 @@ calculate_comfort_index <- function(weather_df, crowd_df, access_score, disrupti
   # --- Define Scoring Logic Helpers ---
   
   # 1. Thermal Score (Tc)
-  # Ideal: 18-22C. Distance reduces score. Rain reduces score.
+  # Ideal: 14-22C. Distance reduces score. Rain reduces score.
   calc_thermal <- function(temp, precip) {
     dist <- pmax(0, 14 - temp) + pmax(0, temp - 22)
     base <- pmax(0, pmin(10, 10 - dist))

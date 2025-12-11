@@ -54,13 +54,13 @@ user_profiles <- list(
     label = "Daily Commuter",
     icon  = "briefcase",
     desc  = "Balanced mix of crowd, weather, and accessibility.",
-    weights = c(w_weather = 0.4, w_crowd = 0.5, w_access = 0.1)
+    weights = c(w_weather = 0.3, w_crowd = 0.6, w_access = 0.1)
   ),
   "accessibility" = list(
     label = "Accessibility Focused",
     icon  = "wheelchair",
     desc  = "Prioritizes step-free access and low crowding.",
-    weights = c(w_weather = 0.2, w_crowd = 0.2, w_access = 0.6)
+    weights = c(w_weather = 0.1, w_crowd = 0.3, w_access = 0.6)
   ),
   "thermal" = list(
     label = "Weather Sensitive",

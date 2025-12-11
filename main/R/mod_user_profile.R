@@ -54,7 +54,7 @@ get_traveler_modal_content <- function(ns, current_selection, profiles) {
         align-items: center;
         width: 100%;
         background-color: #f8f9fa;
-          border: 2px solid #eaecf0;
+        border: 2px solid #eaecf0;
         border-radius: 16px;
         padding: 15px 20px;
         cursor: pointer;
@@ -88,12 +88,6 @@ get_traveler_modal_content <- function(ns, current_selection, profiles) {
           choiceValues = names(profiles),
           choiceNames = lapply(names(profiles), function(key) {
             info <- profiles[[key]]
-            # tagList(
-            #   icon(info$icon),
-            #   tags$strong(info$label),
-            #   tags$br(),
-            #   tags$small(style="color:#666;", info$desc)
-            # )
             
             # Simple HTML structure inside the label
             HTML(paste0(
@@ -164,7 +158,7 @@ mod_profile_badge_ui <- function(id) {
   tagList(
     tags$head(tags$style(HTML("
       .badge-link { text-decoration: none !important; cursor: pointer; }
-      .profile-badge { display: inline-flex; align-items: center; background: transparent; padding: 0; color: #888682; margin-top: 12px; transition: all 0.3s ease; }
+      .profile-badge { display: inline-flex; align-items: center; background: transparent; padding: 0; color: #888682; margin-bottom: 12px; transition: all 0.3s ease; }
       .profile-badge i { margin-right: 6px; color: #888682; font-size: 14px; }
       .profile-badge-label { font-weight: 600; text-transform: capitalize; font-size: 14px; }
       .profile-badge:hover, .profile-badge:hover i { color: #555; transform: translateY(-0.5px); }

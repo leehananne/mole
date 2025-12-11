@@ -61,7 +61,7 @@ interpret_delay <- function(naptan_code) {
   message_list <- c()
   
   # 2. Loop through descriptions and categorize
-  if (length(descriptions) > 0) {
+  if (!is.null(descriptions) && length(descriptions) > 0) {
     for (desc in descriptions) {
       
       # Check for Minor Delays
@@ -113,7 +113,7 @@ interpret_access <- function(naptan_code) {
   message_list <- c()
   
   # 2. Process descriptions
-  if (length(descriptions) > 0) {
+  if (!is.null(descriptions) && length(descriptions) > 0) {
     for (desc in descriptions) {
       
       # Check for Step Free Access issues

@@ -65,16 +65,8 @@ server <- function(input, output, session) {
   })
   
   # B. Crowd Forecasts - Hourly / 15 Minute
-  crowd_df_2 <- reactive({
-    get_hourly_crowd_forecast(station_naptan(), 4)
-  })
-  
   crowd_hourly_fc <- reactive({
     get_hourly_crowd_forecast(station_naptan(), 4)
-  })
-  
-  crowd_df <- reactive({
-    get_15min_crowd_forecast(station_naptan(), 4)
   })
   
   crowd_15min_fc <- reactive({
@@ -109,16 +101,7 @@ server <- function(input, output, session) {
   # === Selected Station Comfort Servers ===
   mod_comfort_server("comfort_1", station_comfort)
   mod_advice_server("advice_box_1", station_comfort, mole_insight)
-  
-  
-  # == Map Server ==
-  map_server_logic(
-    input, output, session,
-    station_df = station_master_data,
-    
-    selected_station_id = reactive(input$station_selector),
-    journey_data = current_journey
-  )
+  mod_disruption_server("disruption_box", disrupt_delay, disrupt_access)
   
   # ============================================================================
   # Station info ui card
@@ -129,12 +112,15 @@ server <- function(input, output, session) {
   
   # === Reactive for Journey Data ===
   # This triggers when a user clicks a "Search" button
-  current_journey <- eventReactive(input$search_button, {
-    req(input$origin_select, input$dest_select)
+  current_journey <- eventReactive(input$plan_journey, {
+    req(input$origin_station, input$destination_station)
     
     # Lookup lat/lons for origin and dest
-    orig <- station_master_data %>% filter(NaptanCode == input$origin_select)
-    dest <- station_master_data %>% filter(NaptanCode == input$dest_select)
+    orig <- station_master_data %>% filter(NaptanCode == input$origin_station) %>% head(1)
+    dest <- station_master_data %>% filter(NaptanCode == input$destination_station) %>% head(1)
+    
+    # Check if stations exist
+    req(nrow(orig) > 0, nrow(dest) > 0)
     
     list(
       OriginName = orig$StationName,
@@ -145,6 +131,15 @@ server <- function(input, output, session) {
       DestLon    = dest$Longitude
     )
   })
+  
+  # == Map Server ==
+  map_server_logic(
+    input, output, session,
+    station_df = station_master_data,
+    selected_station_id = reactive(input$station_selector),
+    journey_data = current_journey,
+    active_tab = reactive(input$left_tabs)
+  )
   
   # === JOURNEY PLANNER LOGIC ===
   journey_route_data <- eventReactive(input$plan_journey, {
@@ -284,7 +279,7 @@ server <- function(input, output, session) {
   })
 
 
-  # === STATION CROWDING TAB ===
+  # === STATION CROWDING ===
   crowd_naptan_reactive <- eventReactive(input$crowd_update, {
     req(input$crowd_naptan)
     trimws(input$crowd_naptan)
@@ -298,8 +293,8 @@ server <- function(input, output, session) {
     plot_crowd(naptan)
   })
 
-  # ==============================================================================
-  # JOURNEY TAB CROWDING PLOTS (Origin and Destination)
+  
+  # === JOURNEY TAB CROWDING PLOTS (Origin and Destination) ===
   # Origin station crowding title
   output$origin_crowding_title <- renderUI({
     origin_naptan <- input$origin_station
@@ -332,7 +327,6 @@ server <- function(input, output, session) {
     return(h5(paste("Crowding at", station_name)))
   })
   
-  # ============================================================================
   # Origin station crowding plot
   output$origin_crowding_plot <- renderPlot({
     # Force reactive dependency
@@ -369,7 +363,6 @@ server <- function(input, output, session) {
     })
   })
   
-  # ============================================================================
   # Destination station crowding plot
   output$destination_crowding_plot <- renderPlot({
     # Force reactive dependency
@@ -406,10 +399,8 @@ server <- function(input, output, session) {
     })
   })
   
-  # ==============================================================================
-  # BOTTOM CROWDING PLOT (for Stations tab)
-  # ==============================================================================
-  
+
+    # === BOTTOM CROWDING PLOT (for Stations tab) === 
   # Station crowding title (for Stations tab)
   output$station_crowding_title <- renderUI({
     station_name <- station_name()
@@ -429,7 +420,7 @@ server <- function(input, output, session) {
     input$station_selector
     input$destination_station
     input$left_tabs
-    
+
     # 2. Determine Logic based on Tab
     active_tab <- input$left_tabs %||% "Stations"
     naptan <- NULL
@@ -448,12 +439,61 @@ server <- function(input, output, session) {
       if (!is.null(n) && n != "") naptan <- as.character(n)
     }
     
-    # 3. Clean the Input
-    if (!is.null(naptan)) {
-      naptan <- as.character(naptan)[1]
-      if (is.na(naptan) || naptan == "") naptan <- NULL
+    if (is.null(naptan) || length(naptan) == 0 || naptan == "") {
+      return(ggplot() + 
+               annotate("text", x = 0.5, y = 0.5, 
+                        label = "Select the station", 
+                        size = 4, hjust = 0.5, vjust = 0.5) +
+               theme_void())
     }
     
     plot_crowd(naptan)
+  })
+  
+  # === APP INFO MODAL ===
+  observeEvent(input$app_info_btn, {
+    showModal(modalDialog(
+      title = NULL, # We create a custom header below
+      size = "m",
+      easyClose = TRUE, # Allows clicking background/X to close
+      fade = TRUE,
+      footer = modalButton("Close"), # Simple Close button
+      
+      # --- Modal Content ---
+      div(style = "text-align: center; padding: 10px 0 20px 0;",
+          h3("MORE ABOUT MOLE", style = "font-family: 'Darumadrop'; font-size: 40px; line-height: 30px; margin: 0 0 20px 0; color: #333; margin-top: 20px")
+      ),
+      
+      div(style = "padding: 0 20px;",
+          p(
+            tags$strong("MOLE"), " provides real-time crowding, weather, and comfort scores. Select a station to view insightful comfort data with travel insights based on our predictions. Any service disruptions are indicated below the tips!"
+          ),
+          
+          p("For journeys, use the 'Journey' tab to plan routes based on your specific needs (e.g., Step-free access). You can see crowd predictions for both your origin and destination."),
+          
+          tags$hr(style = "border-top: 1px solid #eee; margin: 20px 0;"),
+          
+          # How it works section
+          p("How does the Comfort Index work?", style = "font-weight: bold; color: #333; margin-bottom: 10px;"),
+          p("This score adjusts based on your selected profile, prioritizing what matters most to you:"),
+          
+          tags$ul(style = "padding-left: 20px; margin-bottom: 20px;",
+                  tags$li(
+                    tags$strong("Daily Commuter:"), " Crowd > Weather > Accessibility"
+                  ),
+                  tags$li(
+                    tags$strong("Accessibility Focused:"), " Accessibility > Crowd > Weather"
+                  ),
+                  tags$li(
+                    tags$strong("Weather Sensitive:"), " Weather > Crowd > Accessibility"
+                  )
+          ),
+          
+          # Closing Sentence
+          p(style = "text-align: center; margin-top: 20px; font-weight: 500; color: #333;",
+            "Try with different profiles and ", tags$strong("enjoy a mole comfortable journey!")
+          )
+      )
+    ))
   })
 }

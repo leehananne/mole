@@ -68,8 +68,7 @@ plot_crowd <- function(naptan_code) {
   
   if (is_synthetic_data) {
     # GENERATE SYNTHETIC DATA (Flat 0.4 baseline for all 96 intervals)
-    # We construct a dataframe that mimics the API structure so downstream logic works
-    
+
     # Generate time strings "00:00", "00:15" ... "23:45"
     hours <- rep(0:23, each = 4)
     mins  <- rep(c("00", "15", "30", "45"), 24)

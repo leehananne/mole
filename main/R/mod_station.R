@@ -1,9 +1,12 @@
+# ==============================================================================
 # STATION MODULE
 #   Fetch service lines and toilet services
 #   UI component for station card
+# ==============================================================================
 
 
-# ----- 2. fetch line services from api - to tidy up -----
+# Function: Fetch Line Servies from API
+# ------------------------------------------------------------------------------
 fetch_line_services <- function(naptan_id) {
   if (is.null(naptan_id) || naptan_id == "") return(character(0))
   
@@ -26,7 +29,9 @@ fetch_line_services <- function(naptan_id) {
   })
 }
 
-# --- Helper: Fetch Toilets ---
+
+# Function: Fetch Toilet Data from CSV
+# ------------------------------------------------------------------------------
 fetch_station_toilets <- function(naptan_id, hub_naptan, toilet_df) {
   if (is.null(toilet_df) || nrow(toilet_df) == 0) return(NULL)
   
@@ -44,7 +49,9 @@ fetch_station_toilets <- function(naptan_id, hub_naptan, toilet_df) {
   return(matched_toilets)
 }
 
-# --- Main Component Function ---
+
+# UI: Main Card UI Component
+# ------------------------------------------------------------------------------
 station_card_ui <- function(station, station_df, toilet_df) {
   
   # 1. EMPTY STATE CHECK

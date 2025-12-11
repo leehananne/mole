@@ -21,7 +21,8 @@ component_station_search <- function() {
         ),
         
         # Comfort index and advice box
-        mod_advice_ui("advice_box_1")
+        mod_advice_ui("advice_box_1"),
+        mod_disruption_ui("disruption_box")
     )
   )
 }
@@ -94,7 +95,7 @@ component_journey_planner <- function() {
 # --- C. Right Section: Insights Area ---
 component_insights_panel <- function() {
   div(class = "insights-container",
-      h6("Live Insights", class = "mb-3 text-muted"),
+      h4("Live Insights", class = "mb-3 text-muted"),
       
       # Logic to switch views based on active tab
       conditionalPanel(
@@ -158,9 +159,13 @@ ui <- fluidPage(
             div(
               span("MOLE", class = "brand-title"),
               span("Underground Comfort Assistant", class = "brand-sub"),
-              mod_profile_badge_ui("profile_badge_1")
-            )
+            ),
+            
+            # Info Circle Button
+            actionButton("app_info_btn", icon("question"), class = "btn-info-circle", label = NULL)
         ),
+        
+        mod_profile_badge_ui("profile_badge_1"),
         
         # Tabs
         div(class = "custom-tabs",

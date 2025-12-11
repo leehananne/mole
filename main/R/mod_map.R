@@ -1,7 +1,9 @@
+# ==============================================================================
 # MAP MODULE
 #   - Calls Google Maps API
 #   - Handles Single Station Pinning
 #   - Handles Journey (Origin -> Dest) Pinning & Routing
+# ==============================================================================
 
 # 1. MAP CONFIGURATION & ASSETS
 # ------------------------------------------------------------------------------
@@ -22,6 +24,7 @@ map_assets <- tagList(
       let selectedMarker = null;  // For single station selection
       let journeyLine = null;     // For the route line
       let journeyMarkers = [];    // For Origin/Dest markers
+      let transitLayer = null;
 
       function initMap() {
         map = new google.maps.Map(document.getElementById('map'), {
@@ -34,6 +37,9 @@ map_assets <- tagList(
           mapTypeControl: false
         });
         
+        transitLayer = new google.maps.TransitLayer();
+        transitLayer.setMap(map);
+        
         // Signal to Shiny that map is loaded
         Shiny.setInputValue('map_ready', true, {priority: 'event'});
       }
@@ -44,8 +50,15 @@ map_assets <- tagList(
          journeyMarkers.forEach(m => m.setMap(null));
          journeyMarkers = [];
       }
+      
+      // --- Handler: Toggle Transit Layer ---
+      // Receives true (Show) or false (Hide)
+      Shiny.addCustomMessageHandler('toggleTransit', function(show) {
+        if (!transitLayer || !map) return;
+        transitLayer.setMap(show ? map : null);
+      });
 
-      // --- Handler 1: Highlight a Single Station ---
+      // --- Handler: Highlight a Single Station ---
       Shiny.addCustomMessageHandler('highlightStation', function(data) {
         if (!map || !data) return;
         
@@ -136,11 +149,20 @@ map_assets <- tagList(
 #   selected_station_id: Reactive returning the NaptanCode of the selected station (from dropdown)
 #   journey_data: Reactive returning a list/row with (orig_lat, orig_lon, dest_lat, dest_lon, etc.)
 
-map_server_logic <- function(input, output, session, station_df, selected_station_id, journey_data) {
+map_server_logic <- function(input, output, session, station_df, selected_station_id, journey_data, active_tab) {
+  
+  # --- Manage Transit Layer visibility based on Tab ---
+  observe({
+    req(active_tab())
+    # If tab is "Stations", show layer (TRUE). If "Journey", hide it (FALSE).
+    should_show <- (active_tab() == "Stations")
+    session$sendCustomMessage("toggleTransit", should_show)
+  })
   
   # --- Logic 1: Highlight Selected Station ---
-  # Triggers when the user selects a station in the dropdown
-  observeEvent(selected_station_id(), {
+  # Only runs if "Stations" tab is active AND a station is selected
+  observe({
+    req(active_tab() == "Stations")
     req(selected_station_id())
     
     # Filter data
@@ -158,11 +180,12 @@ map_server_logic <- function(input, output, session, station_df, selected_statio
   })
   
   # --- Logic 2: Draw Journey ---
-  # Triggers when a journey search is executed
-  observeEvent(journey_data(), {
+  # Only runs if "Journey" tab is active AND journey data exists
+  observe({
+    req(active_tab() == "Journey")
     req(journey_data())
     
-    # Expecting journey_data() to return a list or 1-row dataframe with these columns
+    # Expecting journey_data() to return a list
     data <- journey_data()
     
     session$sendCustomMessage("drawJourney", list(

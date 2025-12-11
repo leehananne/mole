@@ -238,7 +238,7 @@ mod_advice_ui <- function(id) {
         }
 
         .bubble-label {
-          font-size: 14px; font-weight: bold; color: #555; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px;
+          font-size: 14px; font-weight: bold; color: #555; margin-bottom: 5px; text-transform: capitalize;
         }
 
         .bubble-value-row { display: flex; align-items: baseline; }
@@ -367,7 +367,7 @@ mod_advice_server <- function(id, comfort_df, suggestions) {
           
           # Bottom Section (Advice Box)
           div(class = "advice-box-container",
-              div(class = "advice-title", "Mole's Travel Tips:"), 
+              div(class = "advice-title", "Mole's Travel Insights:"), 
               
               # Dynamic Advice Items
               div(class = "advice-item", icon("users"), span(suggestions$crowd)),
