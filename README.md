@@ -40,8 +40,17 @@ You will need R and RStudio installed.
     ```
     git clone https://github.com/leehananne/mole.git
     ```
+
+2. **Setup .Renviron file** 
     
-2. **Install Dependencies** 
+    Create .Renviron file with Google Maps API key and map style ID.
+    
+    ```
+    GMAP_API_KEY =
+    MAP_ID_KEY =
+    ```
+
+3. **Install Dependencies** 
     
     In your R terminal,
     
@@ -49,6 +58,6 @@ You will need R and RStudio installed.
     install.packages(c("ggplot2", "httr", "jsonlite", "scales", "plotly", "bslib", "purrr", "dplyr", "lubridate", "DT"))
     ```
     
-3. **Run the App**
+4. **Run the App**
     
     Open `app.R` in RStudio and click “Run App”
