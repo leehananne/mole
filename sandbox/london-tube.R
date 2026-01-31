@@ -9,8 +9,9 @@ library(dplyr)
 library(lubridate) # Keep for time calculations
 library(DT)
 
-# --- 1. API Keys (Replace with secure method!) ---
-google_maps_api <- "AIzaSyAyNRSTGTUmjKXa7CqdmxczCNl4U3HOEYI" # Replace with your actual key
+# --- 1. API Keys ---
+# Enter your Google Maps API key
+google_maps_api <- "" 
 
 # --- 2. Function to Fetch and Process TfL Station Data ---
 fetch_and_process_tfl_stoppoints <- function() {

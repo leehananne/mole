@@ -83,5 +83,9 @@ default_destination_naptan_code <- station_choices[default_destination_name]
 
 # API Configurations
 TFL_API <- ""
-GMAP_API <- "AIzaSyCkp9eNSjWSoLJ_s0NX61yg21lcwCAaD8Q"
-MAP_ID <- "a3091a6195c7c2574ff8364a"
+GMAP_API <- Sys.getenv("GMAP_API_KEY")
+MAP_ID <- Sys.getenv("MAP_ID_KEY")
+
+if (GMAP_API == ""||MAP_ID == "") {
+  stop("Security Alert: API keys are missing. Please check your .Renviron file.")
+}

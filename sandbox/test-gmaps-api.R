@@ -3,7 +3,8 @@ library(jsonlite)
 library(dplyr) # For easier data manipulation later
 
 # --- Your API Key and Location ---
-your_api_key <- "AIzaSyAyNRSTGTUmjKXa7CqdmxczCNl4U3HOEYI"
+# Enter your Google Maps API key and Map ID
+your_api_key <- ""
 latitude <- 37.4220
 longitude <- -122.0841
 

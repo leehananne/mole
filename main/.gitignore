@@ -5,6 +5,7 @@ config.R
 .Rhistory
 .RData
 .Ruserdata
+.Renviron
 
 # OS Files
 .DS_Store

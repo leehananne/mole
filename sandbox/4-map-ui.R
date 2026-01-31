@@ -26,8 +26,9 @@ station_map_data <- station_table_data %>%
 # 2. MAP CONFIGURATION & ASSETS
 # ==============================================================================
 
-YOUR_API_KEY <- "AIzaSyCkp9eNSjWSoLJ_s0NX61yg21lcwCAaD8Q"
-YOUR_MAP_ID <- "a3091a6195c7c2574ff8364a" 
+# Enter your Google Maps API key and Map ID
+YOUR_API_KEY <- ""
+YOUR_MAP_ID <- "" 
 
 google_api_script <- tags$script(
   src = paste0("https://maps.googleapis.com/maps/api/js?key=", YOUR_API_KEY, "&callback=initMap"),
